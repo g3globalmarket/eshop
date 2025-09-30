@@ -980,6 +980,21 @@ importers:
       '@eshop/components':
         specifier: workspace:*
         version: link:../../packages/components
+      '@eshop/error-handler':
+        specifier: workspace:^
+        version: link:../../packages/error-handler
+      '@eshop/imagekit':
+        specifier: workspace:^
+        version: link:../../packages/libs/imagekit
+      '@eshop/kafka':
+        specifier: workspace:^
+        version: link:../../packages/utils/kafka
+      '@eshop/middleware':
+        specifier: workspace:^
+        version: link:../../packages/middleware
+      '@eshop/redis':
+        specifier: workspace:^
+        version: link:../../packages/libs/redis
       '@prisma/client':
         specifier: ^6.11.1
         version: 6.12.0(prisma@6.12.0(typescript@5.7.3))(typescript@5.7.3)
@@ -1112,7 +1127,7 @@ importers:
         specifier: ^16.0.0
         version: 16.6.1
       express:
-        specifier: ^4.18.0
+        specifier: ^4.21.2
         version: 4.21.2
       path:
         specifier: ^0.12.7
@@ -1131,7 +1146,7 @@ importers:
         specifier: ^2.8.13
         version: 2.8.19
       '@types/express':
-        specifier: ^4.17.17
+        specifier: ^4.17.23
         version: 4.17.23
       '@types/node':
         specifier: ^20.0.0
@@ -1160,6 +1175,9 @@ importers:
       '@prisma/client':
         specifier: ^6.11.1
         version: 6.12.0(prisma@6.12.0(typescript@5.7.3))(typescript@5.7.3)
+      '@types/express':
+        specifier: ^4.17.23
+        version: 4.17.23
       cookie-parser:
         specifier: ^1.4.6
         version: 1.4.7
@@ -1170,7 +1188,7 @@ importers:
         specifier: ^16.0.0
         version: 16.6.1
       express:
-        specifier: ^4.18.0
+        specifier: ^4.21.2
         version: 4.21.2
       jsonwebtoken:
         specifier: ^9.0.0
@@ -1191,9 +1209,6 @@ importers:
       '@types/cors':
         specifier: ^2.8.13
         version: 2.8.19
-      '@types/express':
-        specifier: ^4.17.17
-        version: 4.17.23
       '@types/jsonwebtoken':
         specifier: ^9.0.0
         version: 9.0.10

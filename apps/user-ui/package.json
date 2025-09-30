@@ -10,6 +10,11 @@
   },
   "dependencies": {
     "@eshop/components": "workspace:*",
+    "@eshop/error-handler": "workspace:^",
+    "@eshop/imagekit": "workspace:^",
+    "@eshop/kafka": "workspace:^",
+    "@eshop/middleware": "workspace:^",
+    "@eshop/redis": "workspace:^",
     "@prisma/client": "^6.11.1",
     "@stripe/react-stripe-js": "^3.6.0",
     "@stripe/stripe-js": "^7.0.0",
