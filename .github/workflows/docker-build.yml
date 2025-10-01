@@ -2,9 +2,9 @@ name: Build & Deploy
 
 on:
   push:
-    branches: [master, develop]
+    branches: [master, develop, main]
   pull_request:
-    branches: [master]
+    branches: [master, main]
   workflow_dispatch:
     inputs:
       force_rebuild:
