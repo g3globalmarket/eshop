@@ -20,9 +20,9 @@ if [ "$CHANGED_FRONTEND" != "[]" ]; then
     done
 fi
 
-# Start/restart services using docker-compose
+# Start/restart services using docker compose
 echo "Deploying services..."
-docker-compose -f docker-compose.production.yml up -d
+docker compose -f docker-compose.production.yml up -d
 
 # Wait for services to be healthy with dynamic checking
 echo "Waiting for services to be healthy..."
