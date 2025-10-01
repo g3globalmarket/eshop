@@ -22,7 +22,7 @@ fi
 
 # Start/restart services using docker compose
 echo "Deploying services..."
-docker compose -f docker-compose.production.yml -f docker-compose.nginx-override.yml -f docker-compose.pinned.yml up -d
+docker compose -f docker-compose.production.yml -f docker-compose.override.yml -f docker-compose.nginx-override.yml -f docker-compose.pinned.yml up -d
 
 # Wait for services to be healthy with dynamic checking
 echo "Waiting for services to be healthy..."
