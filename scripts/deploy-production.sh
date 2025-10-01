@@ -94,26 +94,16 @@ else
     HTTPS_OK=false
 fi
 
-# Check 2: Direct IP with HTTPS (fallback)
-if [ "$HTTPS_OK" = false ]; then
-    if curl -f -k -H "Host: nomadnet.shop" https://3.239.91.208/gateway-health > /dev/null 2>&1; then
-        echo "✅ Direct HTTPS access working!"
-        HTTPS_OK=true
-    else
-        echo "⚠️  Direct HTTPS failed, checking HTTP redirect..."
-    fi
-fi
-
-# Check 3: HTTP redirect (should get 301)
-if [ "$HTTPS_OK" = false ]; then
-    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://3.239.91.208/ || echo "000")
-    if [ "$HTTP_STATUS" = "301" ]; then
-        echo "✅ HTTP redirect working (301 to HTTPS)!"
-        HTTPS_OK=true
-    else
-        echo "❌ HTTP status: $HTTP_STATUS (expected 301)"
-    fi
-fi
+# Check 2: HTTP redirect (domain)
+  if [ "$HTTPS_OK" = false ]; then
+      HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://nomadnet.shop/ || echo "000")
+      if [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "308" ]; then
+          echo "✅ HTTP redirect working (to HTTPS)!"
+          HTTPS_OK=true
+      else
+          echo "❌ HTTP status: $HTTP_STATUS (expected 301/308)";
+      fi
+  fi
 
 # Check 4: Container health (fallback)
 if [ "$HTTPS_OK" = false ]; then
