@@ -3,8 +3,20 @@ name: Build & Deploy
 on:
   push:
     branches: [master, develop, main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".vscode/**"
+      - ".devcontainer/**"
+      - ".github/ISSUE_TEMPLATE/**"
   pull_request:
     branches: [master, main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".vscode/**"
+      - ".devcontainer/**"
+      - ".github/ISSUE_TEMPLATE/**"
   workflow_dispatch:
     inputs:
       force_rebuild:
