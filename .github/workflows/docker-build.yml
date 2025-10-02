@@ -17,6 +17,9 @@ env:
   DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
   DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 jobs:
   # Detect which services have changed
   detect-changes:
