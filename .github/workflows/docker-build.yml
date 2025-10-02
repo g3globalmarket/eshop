@@ -295,7 +295,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       always() && 
-      github.ref == 'refs/heads/master' && 
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && 
       github.event_name == 'push' &&
       (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
       (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped')
