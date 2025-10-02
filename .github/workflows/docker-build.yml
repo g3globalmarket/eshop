@@ -325,10 +325,9 @@ jobs:
 
             # Pull latest code
             BRANCH="${{ github.ref_name }}"
-git fetch origin ""
-git checkout -B "" "origin/"
-git reset --hard "origin/"
-
+            git fetch origin "$BRANCH"
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            git reset --hard "origin/$BRANCH"
             # Set environment variables for deployment script
             export DOCKER_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
 
