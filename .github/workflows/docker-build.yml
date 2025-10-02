@@ -309,12 +309,19 @@ jobs:
     needs: [detect-changes, build-backend, build-frontend]
     runs-on: ubuntu-latest
     if: |
-      always() && 
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && 
-      github.event_name == 'push' &&
-      (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
-      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped')
-
+      always() &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master) &&
+      (
+        (github.event_name == 'push') ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.force_rebuild == 'true')
+      ) &&
+      (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped) &&
+      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped) &&
+      (
+        needs.detect-changes.outputs.has-backend-changes == 'true' ||
+        needs.detect-changes.outputs.has-frontend-changes == 'true' ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.force_rebuild == 'true')
+      )
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
