@@ -324,7 +324,10 @@ jobs:
             git clean -fd -e .env
 
             # Pull latest code
-            git pull origin master
+            BRANCH="${{ github.ref_name }}"
+git fetch origin ""
+git checkout -B "" "origin/"
+git reset --hard "origin/"
 
             # Set environment variables for deployment script
             export DOCKER_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
