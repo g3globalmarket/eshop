@@ -189,7 +189,7 @@ const ChatPage = () => {
             </div>
             <div className="divide-y divide-gray-200">
               {isLoading ? (
-                {/* <div className="p-4 text-sm text-gray-500">Loading...</div> */}
+                // <div className="p-4 text-sm text-gray-500">Loading...</div>
                 <div className="p-4 text-sm text-gray-500">Ачаалж байна...</div>
               ) : chats.length === 0 ? (
                 <div className="p-4 text-sm text-gray-500">

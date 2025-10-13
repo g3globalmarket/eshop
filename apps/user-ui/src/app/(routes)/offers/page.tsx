@@ -193,7 +193,7 @@ const Page = () => {
             </h3>
             <ul className="space-y-2 !mt-3">
               {isLoading ? (
-                {/* <p>Loading...</p> */}
+                // <p>Loading...</p>
                 <p>Ачаалж байна...</p>
               ) : (
                 data?.categories?.map((category: any) => (
@@ -287,7 +287,7 @@ const Page = () => {
                 ))}
               </div>
             ) : (
-              {/* <p>No Offers found</p> */}
+              // <p>No Offers found</p>
               <p>Санал олдсонгүй</p>
             )}
 

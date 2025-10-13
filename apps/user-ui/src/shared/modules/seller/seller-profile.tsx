@@ -286,7 +286,7 @@ const SellerProfile = ({
                 <ProductCard key={product.id} product={product} />
               ))}
               {products?.length === 0 && (
-                {/* <p className="py-2">No products available yet!</p> */}
+                // <p className="py-2">No products available yet!</p>
                 <p className="py-2">Одоогоор бүтээгдэхүүн байхгүй!</p>
               )}
             </div>
@@ -312,7 +312,7 @@ const SellerProfile = ({
                 />
               ))}
               {products?.length === 0 && (
-                {/* <p className="py-2">No offers available yet!</p> */}
+                // <p className="py-2">No offers available yet!</p>
                 <p className="py-2">Одоогоор санал байхгүй!</p>
               )}
             </div>
