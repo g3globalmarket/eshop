@@ -22,7 +22,8 @@ import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
 import useUser from "apps/user-ui/src/hooks/useUser";
 import { sendKafkaEvent } from "apps/user-ui/src/actions/track-user";
 
-const TABS = ["Products", "Offers", "Reviews"];
+// const TABS = ["Products", "Offers", "Reviews"];
+const TABS = ["Бүтээгдэхүүн", "Санал", "Үнэлгээ"];
 
 const SellerProfile = ({
   shop,
@@ -31,7 +32,8 @@ const SellerProfile = ({
   shop: shops;
   followersCount: number;
 }) => {
-  const [activeTab, setActiveTab] = useState("Products");
+  // const [activeTab, setActiveTab] = useState("Products");
+  const [activeTab, setActiveTab] = useState("Бүтээгдэхүүн");
   const [followers, setFollowers] = useState(followersCount);
   const [isFollowing, setIsFollowing] = useState(false);
 
@@ -166,18 +168,21 @@ const SellerProfile = ({
                   <span>{shop?.ratings || "N/A"}</span>
                 </div>
                 <div className="flex items-center text-slate-700 gap-1">
-                  <Users size={18} /> <span>{followers} Followers</span>
+                  <Users size={18} /> {/* <span>{followers} Followers</span> */}
+                  <span>{followers} Дагагчид</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 mt-3 text-slate-700">
                 <Clock size={18} />
-                <span>{shop?.opening_hours || "Mon - Sat: 9 AM - 6 PM"}</span>
+                {/* <span>{shop?.opening_hours || "Mon - Sat: 9 AM - 6 PM"}</span> */}
+                <span>{shop?.opening_hours || "Да - Бя: 9:00 - 18:00"}</span>
               </div>
 
               <div className="flex items-center gap-2 mt-3 text-slate-700">
                 <MapPin size={18} />{" "}
-                <span>{shop?.address || "No address provided"}</span>
+                {/* <span>{shop?.address || "No address provided"}</span> */}
+                <span>{shop?.address || "Хаяг оруулаагүй"}</span>
               </div>
             </div>
             <button
@@ -190,18 +195,21 @@ const SellerProfile = ({
               disabled={toggleFollowMutation.isPending}
             >
               <Heart size={18} />
-              {isFollowing ? "Unfollow" : "Follow"}
+              {/* {isFollowing ? "Unfollow" : "Follow"} */}
+              {isFollowing ? "Дагахаа болих" : "Дагах"}
             </button>
           </div>
         </div>
 
         <div className="bg-gray-200 p-6 rounded-lg shadow-lg w-full lg:w-[30%]">
-          <h2 className="text-xl font-semibold text-slate-900">Shop Details</h2>
+          {/* <h2 className="text-xl font-semibold text-slate-900">Shop Details</h2> */}
+          <h2 className="text-xl font-semibold text-slate-900">Дэлгүүрийн дэлгэрэнгүй</h2>
 
           <div className="flex items-center gap-3 mt-3 text-slate-700">
             <Calendar size={18} />
             <span>
-              Joined At: {new Date(shop?.createdAt!).toLocaleDateString()}
+              {/* Joined At: {new Date(shop?.createdAt!).toLocaleDateString()} */}
+              Бүртгүүлсэн: {new Date(shop?.createdAt!).toLocaleDateString()}
             </span>
           </div>
 
@@ -219,7 +227,8 @@ const SellerProfile = ({
 
           {shop?.socialLinks && shop?.socialLinks.length > 0 && (
             <div className="mt-3">
-              <h3 className="text-slate-700 text-lg font-medium">Follow Us:</h3>
+                    {/* <h3 className="text-slate-700 text-lg font-medium">Follow Us:</h3> */}
+                    <h3 className="text-slate-700 text-lg font-medium">Биднийг дагаарай:</h3>
               <div className="flex gap-3 mt-2">
                 {shop?.socialLinks?.map((link: any, index: number) => (
                   <a
@@ -260,7 +269,8 @@ const SellerProfile = ({
 
         {/* Content */}
         <div className="bg-gray-200 rounded-lg my-4 text-slate-700">
-          {activeTab === "Products" && (
+          {/* {activeTab === "Products" && ( */}
+          {activeTab === "Бүтээгдэхүүн" && (
             <div className="m-auto grid grid-cols-1 p-4 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5 gap-5">
               {isLoading && (
                 <>
@@ -276,11 +286,13 @@ const SellerProfile = ({
                 <ProductCard key={product.id} product={product} />
               ))}
               {products?.length === 0 && (
-                <p className="py-2">No products available yet!</p>
+                {/* <p className="py-2">No products available yet!</p> */}
+                <p className="py-2">Одоогоор бүтээгдэхүүн байхгүй!</p>
               )}
             </div>
           )}
-          {activeTab === "Offers" && (
+          {/* {activeTab === "Offers" && ( */}
+          {activeTab === "Санал" && (
             <div className="m-auto grid grid-cols-1 p-4 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5 gap-5">
               {isEventsLoading && (
                 <>
@@ -300,13 +312,16 @@ const SellerProfile = ({
                 />
               ))}
               {products?.length === 0 && (
-                <p className="py-2">No offers available yet!</p>
+                {/* <p className="py-2">No offers available yet!</p> */}
+                <p className="py-2">Одоогоор санал байхгүй!</p>
               )}
             </div>
           )}
-          {activeTab === "Reviews" && (
+          {/* {activeTab === "Reviews" && ( */}
+          {activeTab === "Үнэлгээ" && (
             <div>
-              <p className="text-center py-5">No Reviews available yet!</p>
+              {/* <p className="text-center py-5">No Reviews available yet!</p> */}
+              <p className="text-center py-5">Одоогоор үнэлгээ байхгүй!</p>
             </div>
           )}
         </div>
