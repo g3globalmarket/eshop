@@ -158,7 +158,7 @@ const Page = () => {
                 ))}
               </div>
             ) : (
-              {/* <p>No Shops found</p> */}
+              // <p>No Shops found</p>
               <p>Дэлгүүр олдсонгүй</p>
             )}
 
