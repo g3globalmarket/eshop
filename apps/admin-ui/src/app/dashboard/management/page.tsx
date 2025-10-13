@@ -10,10 +10,15 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "apps/admin-ui/src/utils/axiosInstance";
 
+// const columns = [
+//   { accessorKey: "name", header: "Name" },
+//   { accessorKey: "email", header: "Email" },
+//   { accessorKey: "role", header: "Role" },
+// ];
 const columns = [
-  { accessorKey: "name", header: "Name" },
-  { accessorKey: "email", header: "Email" },
-  { accessorKey: "role", header: "Role" },
+  { accessorKey: "name", header: "Нэр" },
+  { accessorKey: "email", header: "И-мэйл" },
+  { accessorKey: "role", header: "Эрх" },
 ];
 
 const Page = () => {
@@ -63,17 +68,20 @@ const Page = () => {
   return (
     <div className="w-full min-h-screen p-8 bg-black text-white text-sm">
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-xl font-bold tracking-wide">Team Management</h2>
+        {/* <h2 className="text-xl font-bold tracking-wide">Team Management</h2> */}
+        <h2 className="text-xl font-bold tracking-wide">Багийн удирдлага</h2>
         <button
           onClick={() => setOpen(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
         >
-          Add Admin
+          {/* Add Admin */}
+          Админ нэмэх
         </button>
       </div>
 
       <div className="mb-4">
-        <BreadCrumbs title="Team Management" />
+        {/* <BreadCrumbs title="Team Management" /> */}
+        <BreadCrumbs title="Багийн удирдлага" />
       </div>
 
       <div className="!rounded shadow-xl border border-slate-700 overflow-hidden">
@@ -96,13 +104,15 @@ const Page = () => {
             {isLoading ? (
               <tr>
                 <td colSpan={3} className="p-4 text-center text-slate-400">
-                  Loading...
+                  {/* Loading... */}
+                  Ачаалж байна...
                 </td>
               </tr>
             ) : isError ? (
               <tr>
                 <td colSpan={3} className="p-4 text-center text-red-500">
-                  Failed to load admins.
+                  {/* Failed to load admins. */}
+                  Админуудыг ачаалахад алдаа гарлаа.
                 </td>
               </tr>
             ) : (
@@ -136,10 +146,12 @@ const Page = () => {
               &times;
             </button>
 
-            <h3 className="text-lg font-semibold mb-4">Add New Admin</h3>
+            {/* <h3 className="text-lg font-semibold mb-4">Add New Admin</h3> */}
+            <h3 className="text-lg font-semibold mb-4">Шинэ админ нэмэх</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block mb-1 text-slate-300">Email</label>
+                {/* <label className="block mb-1 text-slate-300">Email</label> */}
+                <label className="block mb-1 text-slate-300">И-мэйл</label>
                 <input
                   type="text"
                   value={search}
@@ -149,14 +161,17 @@ const Page = () => {
                 />
               </div>
               <div>
-                <label className="block mb-1 text-slate-300">Role</label>
+                {/* <label className="block mb-1 text-slate-300">Role</label> */}
+                <label className="block mb-1 text-slate-300">Эрх</label>
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-800 text-white border border-slate-600 !rounded outline-none"
                 >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
+                  {/* <option value="user">User</option>
+                  <option value="admin">Admin</option> */}
+                  <option value="user">Хэрэглэгч</option>
+                  <option value="admin">Админ</option>
                 </select>
               </div>
               <div className="flex gap-8 pt-2">
@@ -165,14 +180,16 @@ const Page = () => {
                   onClick={() => setOpen(false)}
                   className="w-full bg-slate-700 text-white px-4 py-2 !rounded hover:bg-slate-600"
                 >
-                  Cancel
+                  {/* Cancel */}
+                  Цуцлах
                 </button>
                 <button
                   type="submit"
                   disabled={updating}
                   className="w-full bg-blue-600 text-white px-4 py-2 !rounded hover:bg-blue-700"
                 >
-                  {updating ? "Updating..." : "Add Admin"}
+                  {/* {updating ? "Updating..." : "Add Admin"} */}
+                  {updating ? "Шинэчилж байна..." : "Админ нэмэх"}
                 </button>
               </div>
             </form>
