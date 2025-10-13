@@ -261,7 +261,7 @@ const Signup = () => {
                     OTP дахин илгээх
                   </button>
                 ) : (
-                  {/* `Resend OTP in ${timer}s` */}
+                  // `Resend OTP in ${timer}s`
                   `OTP ${timer}с-д дахин илгээх`
                 )}
               </p>
