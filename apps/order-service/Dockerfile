@@ -41,6 +41,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /app/entrypoint.sh ./entrypoint.sh
+COPY --chown=nodejs:nodejs apps/order-service/src/utils/email-templates ./apps/order-service/src/utils/email-templates
 
 # Switch to non-root user
 USER nodejs

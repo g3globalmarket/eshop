@@ -113,34 +113,41 @@ const Signup = () => {
   return (
     <div className="w-full py-10 min-h-[85vh] bg-[#f1f1f1]">
       <h1 className="text-4xl font-Poppins font-semibold text-black text-center">
-        Signup
+        {/* Signup */}
+        Бүртгүүлэх
       </h1>
       <p className="text-center text-lg font-medium py-3 text-[#00000099]">
-        Home . Signup
+        {/* Home . Signup */}
+        Нүүр . Бүртгүүлэх
       </p>
 
       <div className="w-full flex justify-center">
         <div className="md:w-[480px] p-8 bg-white shadow rounded-lg">
           <h3 className="text-3xl font-semibold text-center mb-2">
-            Signup to Eshop
+            {/* Signup to Eshop */}
+            Eshop-д бүртгүүлэх
           </h3>
           <p className="text-center text-gray-500 mb-4">
-            Already have an account?{" "}
+            {/* Already have an account?{" "} */}
+            Бүртгэл аль хэдийн байна уу?{" "}
             <Link href={"/login"} className="text-blue-500">
-              Login
+              {/* Login */}
+              Нэвтрэх
             </Link>
           </p>
 
           <GoogleButton />
           <div className="flex items-center my-5 text-gray-400 text-sm">
             <div className="flex-1 border-t border-gray-300" />
-            <span className="px-3">or Sign in with Email</span>
+            {/* <span className="px-3">or Sign in with Email</span> */}
+            <span className="px-3">эсвэл И-мэйлээр нэвтрэх</span>
             <div className="flex-1 border-t border-gray-300" />
           </div>
 
           {!showOtp ? (
             <form onSubmit={handleSubmit(onSubmit)}>
-              <label className="block text-gray-700 mb-1">Name</label>
+              {/* <label className="block text-gray-700 mb-1">Name</label> */}
+              <label className="block text-gray-700 mb-1">Нэр</label>
               <input
                 type="text"
                 placeholder="seller name"
@@ -155,7 +162,8 @@ const Signup = () => {
                 </p>
               )}
 
-              <label className="block text-gray-700 mb-1">Email</label>
+              {/* <label className="block text-gray-700 mb-1">Email</label> */}
+              <label className="block text-gray-700 mb-1">И-мэйл</label>
               <input
                 type="email"
                 placeholder="support@nomadnet.com"
@@ -174,7 +182,8 @@ const Signup = () => {
                 </p>
               )}
 
-              <label className="block text-gray-700 mb-1">Password</label>
+              {/* <label className="block text-gray-700 mb-1">Password</label> */}
+              <label className="block text-gray-700 mb-1">Нууц үг</label>
               <div className="relative">
                 <input
                   type={passwordVisible ? "text" : "password"}
@@ -208,13 +217,15 @@ const Signup = () => {
                 disabled={signupMutation.isPending}
                 className="w-full text-lg cursor-pointer mt-4 bg-black text-white py-2 rounded-lg"
               >
-                {signupMutation.isPending ? " Signing up..." : "Signup"}
+                {/* {signupMutation.isPending ? " Signing up..." : "Signup"} */}
+                {signupMutation.isPending ? "Бүртгүүлж байна..." : "Бүртгүүлэх"}
               </button>
             </form>
           ) : (
             <div>
               <h3 className="text-xl font-semibold text-center mb-4">
-                Enter OTP
+                {/* Enter OTP */}
+                OTP оруулах
               </h3>
               <div className="flex justify-center gap-6">
                 {otp?.map((digit, index) => (
@@ -237,7 +248,8 @@ const Signup = () => {
                 disabled={verifyOtpMutation.isPending}
                 onClick={() => verifyOtpMutation.mutate()}
               >
-                {verifyOtpMutation.isPending ? "Verifying..." : "Verify OTP"}
+                {/* {verifyOtpMutation.isPending ? "Verifying..." : "Verify OTP"} */}
+                {verifyOtpMutation.isPending ? "Баталгаажуулж байна..." : "OTP баталгаажуулах"}
               </button>
               <p className="text-center text-sm mt-4">
                 {canResend ? (
@@ -245,10 +257,12 @@ const Signup = () => {
                     onClick={resendOtp}
                     className="text-blue-500 cursor-pointer"
                   >
-                    Resend OTP
+                    {/* Resend OTP */}
+                    OTP дахин илгээх
                   </button>
                 ) : (
-                  `Resend OTP in ${timer}s`
+                  // `Resend OTP in ${timer}s`
+                  `OTP ${timer}с-д дахин илгээх`
                 )}
               </p>
               {verifyOtpMutation?.isError &&

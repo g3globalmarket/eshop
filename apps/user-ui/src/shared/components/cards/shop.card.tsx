@@ -54,7 +54,8 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop }) => {
         <h3 className="text-base font-semibold text-gray-800">{shop?.name}</h3>
 
         <p className="text-xs text-gray-500 mt-0.5">
-          {shop?.followers?.length ?? 0} Followers
+          {/* {shop?.followers?.length ?? 0} Followers */}
+          {shop?.followers?.length ?? 0} Дагагчид
         </p>
 
         {/* Address + Rating */}
@@ -87,7 +88,8 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop }) => {
             href={`/shop/${shop.id}`}
             className="inline-flex items-center text-sm text-blue-600 font-medium hover:underline hover:text-blue-700 transition"
           >
-            Visit Shop
+            {/* Visit Shop */}
+            Дэлгүүр зочлох
             <ArrowUpRight className="w-4 h-4 ml-1" />
           </Link>
         </div>

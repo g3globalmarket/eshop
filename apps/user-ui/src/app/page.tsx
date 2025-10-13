@@ -64,7 +64,8 @@ const Page = () => {
       <div className="md:w-[80%] w-[90%] my-10 m-auto">
         {!isLoading && isLoggedIn && (
           <div className="mb-8">
-            <SectionTitle title="Suggested Products" />
+            {/* <SectionTitle title="Suggested Products" /> */}
+            <SectionTitle title="Санал болгож буй бүтээгдэхүүнүүд" />
           </div>
         )}
 
@@ -88,7 +89,8 @@ const Page = () => {
         )}
 
         {products?.length === 0 && (
-          <p className="text-center">No Products available yet!</p>
+          // <p className="text-center">No Products available yet!</p>
+          <p className="text-center">Одоогоор бүтээгдэхүүн байхгүй!</p>
         )}
 
         {isLoading && (
@@ -103,7 +105,8 @@ const Page = () => {
         )}
 
         <div className="my-8 block">
-          <SectionTitle title="Latest Products" />
+          {/* <SectionTitle title="Latest Products" /> */}
+          <SectionTitle title="Сүүлийн үеийн бүтээгдэхүүнүүд" />
         </div>
         {!LatestProductsLoading && (
           <div className="m-auto grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5 gap-5">
@@ -114,11 +117,13 @@ const Page = () => {
         )}
 
         {latestProducts?.length === 0 && (
-          <p className="text-center">No products Available yet!</p>
+          // <p className="text-center">No products Available yet!</p>
+          <p className="text-center">Одоогоор бүтээгдэхүүн байхгүй!</p>
         )}
 
         <div className="my-8 block">
-          <SectionTitle title="Top Shops" />
+          {/* <SectionTitle title="Top Shops" /> */}
+          <SectionTitle title="Топ дэлгүүрүүд" />
         </div>
 
         {!shopLoading && (
@@ -130,11 +135,13 @@ const Page = () => {
         )}
 
         {shops?.length === 0 && (
-          <p className="text-center">No shops Available yet!</p>
+          //<p className="text-center">No shops Available yet!</p>
+          <p className="text-center">Одоогоор дэлгүүрүүд байхгүй!</p>
         )}
 
         <div className="my-8 block">
-          <SectionTitle title="Top offers" />
+          {/* <SectionTitle title="Top offers" /> */}
+          <SectionTitle title="Топ санал" />
         </div>
         {!offersLoading && !isError && (
           <div className="m-auto grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5 gap-5">
