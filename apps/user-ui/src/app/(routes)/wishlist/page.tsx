@@ -43,19 +43,23 @@ const WishlistPage = () => {
         {/* Breadcrumb */}
         <div className="pb-[50px]">
           <h1 className="md:pt-[50px] font-medium text-[44px] leading-[1] mb-[16px] font-jost">
-            Wishlist
+            {/* Wishlist */}
+            Хүсэлтийн жагсаалт
           </h1>
           <Link href={"/"} className="text-[#55585b] hover:underline">
-            Home
+            {/* Home */}
+            Нүүр
           </Link>
           <span className="inline-block p-[1.5px] mx-1 bg-[#a8acb0] rounded-full"></span>
-          <span className="text-[#55585b]">Wishlist</span>
+          {/* <span className="text-[#55585b]">Wishlist</span> */}
+          <span className="text-[#55585b]">Хүсэлтийн жагсаалт</span>
         </div>
 
         {/* If wishlist is empty */}
         {wishlist.length === 0 ? (
           <div className="text-center text-gray-600 text-lg">
-            Your wishlist is empty! Start adding products.
+            {/* Your wishlist is empty! Start adding products. */}
+            Таны хүсэлтийн жагсаалт хоосон! Бүтээгдэхүүн нэмж эхлээрэй.
           </div>
         ) : (
           <div className="flex flex-col gap-10">
@@ -63,10 +67,14 @@ const WishlistPage = () => {
             <table className="w-full border-collapse">
               <thead className="bg-[#f1f3f4]">
                 <tr>
-                  <th className="py-3 text-left pl-4">Product</th>
+                  {/* <th className="py-3 text-left pl-4">Product</th>
                   <th className="py-3 text-left">Price</th>
                   <th className="py-3 text-left">Quantity</th>
-                  <th className="py-3 text-left">Action</th>
+                  <th className="py-3 text-left">Action</th> */}
+                  <th className="py-3 text-left pl-4">Бүтээгдэхүүн</th>
+                  <th className="py-3 text-left">Үнэ</th>
+                  <th className="py-3 text-left">Тоо ширхэг</th>
+                  <th className="py-3 text-left">Үйлдэл</th>
                   <th className="py-3 text-left"></th>
                 </tr>
               </thead>
@@ -111,7 +119,8 @@ const WishlistPage = () => {
                           addToCart(item, user, location, deviceInfo)
                         }
                       >
-                        Add To Cart
+                        {/* Add To Cart */}
+                        Сагсанд нэмэх
                       </button>
                     </td>
                     <td>
@@ -119,7 +128,8 @@ const WishlistPage = () => {
                         className="text-[#818487] cursor-pointer hover:text-[#ff1826] transition duration-200"
                         onClick={() => removeItem(item.id)}
                       >
-                        ✕ Remove
+                        {/* ✕ Remove */}
+                        ✕ Устгах
                       </button>
                     </td>
                   </tr>

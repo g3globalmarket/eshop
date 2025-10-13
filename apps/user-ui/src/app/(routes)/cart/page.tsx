@@ -30,7 +30,8 @@ const CartPage = () => {
     setError("");
 
     if (!couponCode.trim()) {
-      setError("Coupon code is required!");
+      // setError("Coupon code is required!");
+      setError("Купон код шаардлагатай!");
       return;
     }
 
@@ -50,7 +51,8 @@ const CartPage = () => {
         setDiscountAmount(0);
         setDiscountPercent(0);
         setDiscountedProductId("");
-        setError(res.data.message || "Coupon not valid for any items in cart.");
+        // setError(res.data.message || "Coupon not valid for any items in cart.");
+        setError(res.data.message || "Купон сагсанд байгаа бараанд хүчинтэй биш.");
       }
     } catch (error: any) {
       setDiscountAmount(0);
@@ -62,7 +64,8 @@ const CartPage = () => {
 
   const createPaymentSession = async () => {
     if (addresses?.length === 0) {
-      toast.error("Please set your delivery address to create an order!");
+      // toast.error("Please set your delivery address to create an order!");
+      toast.error("Захиалга үүсгэхийн тулд хүргэлтийн хаягаа тохируулна уу!");
       return;
     }
     setLoading(true);
@@ -83,7 +86,8 @@ const CartPage = () => {
       const sessionId = res.data.sessionId;
       router.push(`/checkout?sessionId=${sessionId}`);
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      // toast.error("Something went wrong. Please try again.");
+      toast.error("Алдаа гарлаа. Дахин оролдоно уу.");
     } finally {
       setLoading(false);
     }
@@ -142,18 +146,22 @@ const CartPage = () => {
       <div className="md:w-[80%] w-[95%] mx-auto min-h-screen">
         <div className="pb-[50px]">
           <h1 className="md:pt-[50px] font-medium text-[44px] leading-[1] mb-[16px] font-jost">
-            Shopping Cart
+            {/* Shopping Cart */}
+            Дэлгүүрийн сагс
           </h1>
           <Link href={"/"} className="text-[#55585b] hover:underline">
-            Home
+            {/* Home */}
+            Нүүр
           </Link>
           <span className="inline-block p-[1.5px] mx-1 bg-[#a8acb0] rounded-full"></span>
-          <span className="text-[#55585b]">Cart</span>
+          {/* <span className="text-[#55585b]">Cart</span> */}
+          <span className="text-[#55585b]">Сагс</span>
         </div>
 
         {cart.length === 0 ? (
           <div className="text-center text-gray-600 text-lg">
-            Your cart is empty! Start adding products.
+            {/* Your cart is empty! Start adding products. */}
+            Таны сагс хоосон! Бүтээгдэхүүн нэмж эхлээрэй.
           </div>
         ) : (
           <div className="lg:flex items-start gap-10">
