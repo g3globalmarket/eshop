@@ -23,7 +23,8 @@ import ProductCard from "../shared/components/cards/product.card";
 import ImageEditModal from "../shared/components/modals/image-edit-modal";
 import XIcon from "../assets/icons/xIcon";
 
-const TABS = ["Products", "Offers", "Reviews"];
+// const TABS = ["Products", "Offers", "Reviews"];
+const TABS = ["Бүтээгдэхүүн", "Санал", "Үнэлгээ"];
 
 const fetchProducts = async () => {
   const res = await axiosInstance.get("/product/api/get-shop-products");
@@ -40,7 +41,8 @@ const fetchEvents = async () => {
 const SellerProfile = () => {
   const { seller, isLoading } = useSeller();
   const [isFollowing, setIsFollowing] = useState(false);
-  const [activeTab, setActiveTab] = useState("Products");
+  // const [activeTab, setActiveTab] = useState("Products");
+  const [activeTab, setActiveTab] = useState("Бүтээгдэхүүн");
   const [editType, setEditType] = useState<"cover" | "avatar" | null>(null); // Store type of image editing
   const router = useRouter();
 
@@ -75,7 +77,8 @@ const SellerProfile = () => {
               className="flex items-center gap-2 text-gray-300 hover:text-white transition mb-4"
             >
               <ArrowLeft size={20} />
-              <span className="font-medium">Back to Dashboard</span>
+              {/* <span className="font-medium">Back to Dashboard</span> */}
+              <span className="font-medium">Хяналтын самбар руу буцах</span>
             </button>
           </div>
 
@@ -96,7 +99,8 @@ const SellerProfile = () => {
                 className="absolute top-3 right-3 bg-gray-700 px-3 py-2 rounded-md flex items-center gap-2 text-white hover:bg-gray-600 transition"
                 onClick={() => setEditType("cover")}
               >
-                <Pencil size={16} /> Edit Cover
+                <Pencil size={16} /> {/* Edit Cover */}
+                Нөмрөг засах
               </button>
             )}
           </div>
@@ -140,21 +144,24 @@ const SellerProfile = () => {
                     </div>
                     <div className="flex items-center text-gray-300 gap-1">
                       <Users size={18} />{" "}
-                      <span>{seller?.followers || 0} Followers</span>
+                      {/* <span>{seller?.followers || 0} Followers</span> */}
+                      <span>{seller?.followers || 0} Дагагчид</span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 mt-3 text-gray-400">
                     <Clock size={18} />
                     <span>
-                      {seller?.shop?.opening_hours || "Mon - Sat: 9 AM - 6 PM"}
+                      {/* {seller?.shop?.opening_hours || "Mon - Sat: 9 AM - 6 PM"} */}
+                      {seller?.shop?.opening_hours || "Да - Бя: 9:00 - 18:00"}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2 mt-3 text-gray-400">
                     <MapPin size={18} />{" "}
                     <span>
-                      {seller?.shop?.address || "No address provided"}
+                      {/* {seller?.shop?.address || "No address provided"} */}
+                      {seller?.shop?.address || "Хаяг оруулаагүй"}
                     </span>
                   </div>
                 </div>
@@ -165,7 +172,8 @@ const SellerProfile = () => {
                     onClick={() => router.push("/edit-profile")}
                   >
                     <Pencil size={18} />
-                    Edit Profile
+                    {/* Edit Profile */}
+                    Профайл засах
                   </button>
                 ) : (
                   <button
@@ -177,19 +185,22 @@ const SellerProfile = () => {
                     onClick={() => setIsFollowing(!isFollowing)}
                   >
                     <Heart size={18} />
-                    {isFollowing ? "Following" : "Follow"}
+                    {/* {isFollowing ? "Following" : "Follow"} */}
+                    {isFollowing ? "Дагаж байна" : "Дагах"}
                   </button>
                 )}
               </div>
             </div>
 
             <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full lg:w-[30%]">
-              <h2 className="text-xl font-semibold text-white">Shop Details</h2>
+              {/* <h2 className="text-xl font-semibold text-white">Shop Details</h2> */}
+              <h2 className="text-xl font-semibold text-white">Дэлгүүрийн дэлгэрэнгүй</h2>
 
               <div className="flex items-center gap-3 mt-3 text-gray-400">
                 <Calendar size={18} />
                 <span>
-                  Joined At:{" "}
+                  {/* Joined At:{" "} */}
+                  Бүртгүүлсэн:{" "}
                   {new Date(seller?.shop?.createdAt).toLocaleDateString()}
                 </span>
               </div>
@@ -210,7 +221,8 @@ const SellerProfile = () => {
                 seller?.shop?.socialLinks.length > 0 && (
                   <div className="mt-3">
                     <h3 className="text-white text-lg font-medium">
-                      Follow Us:
+                      {/* Follow Us: */}
+                      Биднийг дагаарай:
                     </h3>
                     <div className="flex gap-3 mt-2">
                       {seller?.shop?.socialLinks?.map(
@@ -254,23 +266,28 @@ const SellerProfile = () => {
 
             {/* Content */}
             <div className="bg-gray-800 p-3 rounded-lg my-6 text-white">
-              {activeTab === "Products" && (
+              {/* {activeTab === "Products" && ( */}
+          {activeTab === "Бүтээгдэхүүн" && (
                 <div className="m-auto grid grid-cols-1 md:grid-cols-3 gap-5">
                   {products?.map((product: any) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
-                  {products?.length === 0 && <p>No products available yet!</p>}
+                  {/* {products?.length === 0 && <p>No products available yet!</p>} */}
+                  {products?.length === 0 && <p>Одоогоор бүтээгдэхүүн байхгүй!</p>}
                 </div>
               )}
-              {activeTab === "Offers" && (
+              {/* {activeTab === "Offers" && ( */}
+          {activeTab === "Санал" && (
                 <div className="m-auto grid grid-cols-1 md:grid-cols-3 gap-5">
                   {events?.map((product: any) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
-                  {events?.length === 0 && <p>No offers available yet!</p>}
+                  {/* {events?.length === 0 && <p>No offers available yet!</p>} */}
+                  {events?.length === 0 && <p>Одоогоор санал байхгүй!</p>}
                 </div>
               )}
-              {activeTab === "Reviews" && <div>No reviews available yet!</div>}
+              {/* {activeTab === "Reviews" && <div>No reviews available yet!</div>} */}
+          {activeTab === "Үнэлгээ" && <div>Одоогоор үнэлгээ байхгүй!</div>}
             </div>
           </div>
 

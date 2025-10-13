@@ -79,13 +79,16 @@ const Page = () => {
       <div className="w-[90%] lg:w-[80%] m-auto">
         <div className="pb-[50px]">
           <h1 className="md:pt-[40px] font-[500] text-[44px] leading-[1] mb-[14px] font-jost">
-            All Shops
+            {/* All Shops */}
+            Бүх дэлгүүрүүд
           </h1>
           <Link href="/" className="text-[#55585b] hover:underline">
-            Home
+            {/* Home */}
+            Нүүр
           </Link>
           <span className="inline-block p-[1.5px] mx-1 bg-[#a8acb0] rounded-full"></span>
-          <span className="text-[#55585b]">All Shops</span>
+          {/* <span className="text-[#55585b]">All Shops</span> */}
+          <span className="text-[#55585b]">Бүх дэлгүүрүүд</span>
         </div>
 
         <div className="w-full flex flex-col lg:flex-row gap-8">
@@ -93,7 +96,8 @@ const Page = () => {
           <aside className="w-full lg:w-[270px] !rounded bg-white p-4 space-y-6 shadow-sm">
             {/* Categories */}
             <h3 className="text-xl font-Poppins font-medium border-b border-b-slate-300 pb-1">
-              Categories
+              {/* Categories */}
+              Ангилал
             </h3>
             <ul className="space-y-2 !mt-3">
               {categories?.map((category: any) => (
@@ -116,7 +120,8 @@ const Page = () => {
 
             {/* Countries */}
             <h3 className="text-xl font-Poppins font-medium border-b border-b-slate-300 pb-1">
-              Countries
+              {/* Countries */}
+              Улсууд
             </h3>
             <ul className="space-y-2 !mt-3">
               {countries?.map((country: any) => (
@@ -153,7 +158,8 @@ const Page = () => {
                 ))}
               </div>
             ) : (
-              <p>No Shops found</p>
+              {/* <p>No Shops found</p> */}
+              <p>Дэлгүүр олдсонгүй</p>
             )}
 
             {totalPages > 1 && (

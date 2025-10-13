@@ -171,14 +171,17 @@ const ChatPage = () => {
         {/* Sidebar */}
         <div className="w-[320px] border-r border-gray-800 bg-gray-950">
           <div className="p-4 border-b border-gray-800 text-lg font-semibold">
-            Messages
+            {/* Messages */}
+            Зурвас
           </div>
           <div className="divide-y divide-gray-900">
             {isLoading ? (
-              <div className="text-center py-5 text-sm">Loading...</div>
+              {/* <div className="text-center py-5 text-sm">Loading...</div> */}
+              <div className="text-center py-5 text-sm">Ачаалж байна...</div>
             ) : chats.length === 0 ? (
               <p className="text-center py-5 text-sm">
-                No conversation available yet!
+                {/* No conversation available yet! */}
+                Одоогоор ярилцлага байхгүй!
               </p>
             ) : (
               chats.map((chat) => {
@@ -253,7 +256,8 @@ const ChatPage = () => {
                     {selectedChat.user?.name}{" "}
                   </h2>
                   <p className="text-xs text-gray-400">
-                    {selectedChat.user?.isOnline ? "Online" : "Offline"}
+                    {/* {selectedChat.user?.isOnline ? "Online" : "Offline"} */}
+                    {selectedChat.user?.isOnline ? "Онлайн" : "Офлайн"}
                   </p>
                 </div>
               </div>
@@ -306,7 +310,8 @@ const ChatPage = () => {
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
-              Select a conversation to start chatting
+              {/* Select a conversation to start chatting */}
+              Чат эхлүүлэхийн тулд ярилцлага сонгоно уу
             </div>
           )}
         </div>
