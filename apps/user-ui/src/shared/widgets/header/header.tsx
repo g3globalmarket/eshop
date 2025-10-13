@@ -60,7 +60,7 @@ const Header = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            {/* placeholder="Search for products..." */}
+            // placeholder="Search for products..."
             placeholder="Бүтээгдэхүүн хайх..."
             className="w-full px-4 font-Poppins font-medium border-[2.5px] border-[#3489FF] outline-none h-[55px]"
           />

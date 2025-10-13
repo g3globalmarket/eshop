@@ -49,8 +49,8 @@ const Page = () => {
             {/* Welcome Admin */}
             Админ тавтай морил
           </h1>
+          {/* <Input label="Email" /> */}
           <Input
-            {/* label="Email" */}
             label="И-мэйл"
             placeholder="support@nomadnet.com"
             {...register("email", {
@@ -63,8 +63,8 @@ const Page = () => {
           />
 
           <div className="mt-3">
+            {/* <Input label="Password" /> */}
             <Input
-              {/* label="Password" */}
               label="Нууц үг"
               type="password"
               placeholder="******"

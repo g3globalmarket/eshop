@@ -142,7 +142,7 @@ const Signup = () => {
                 : step === 2
                 // ? "Setup Shop"
                 ? "Дэлгүүр тохируулах"
-                // : "Connect Bank"}
+                // : "Connect Bank"
                 : "Банк холбох"}
             </span>
           </div>
@@ -341,7 +341,7 @@ const Signup = () => {
                       OTP дахин илгээх
                     </button>
                   ) : (
-                    {/* `Resend OTP in ${timer}s` */}
+                    // `Resend OTP in ${timer}s`
                     `OTP ${timer}с-д дахин илгээх`
                   )}
                 </p>
