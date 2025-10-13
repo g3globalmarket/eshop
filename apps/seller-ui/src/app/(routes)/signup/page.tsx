@@ -137,10 +137,13 @@ const Signup = () => {
             </div>
             <span className="ml-[-15px]">
               {step === 1
-                ? "Create Account"
+                // ? "Create Account"
+                ? "Данс үүсгэх"
                 : step === 2
-                ? "Setup Shop"
-                : "Connect Bank"}
+                // ? "Setup Shop"
+                ? "Дэлгүүр тохируулах"
+                // : "Connect Bank"}
+                : "Банк холбох"}
             </span>
           </div>
         ))}
@@ -153,9 +156,11 @@ const Signup = () => {
             {!showOtp ? (
               <form onSubmit={handleSubmit(onSubmit)}>
                 <h3 className="text-2xl font-semibold text-center mb-4">
-                  Create Account
+                  {/* Create Account */}
+                  Данс үүсгэх
                 </h3>
-                <label className="block text-gray-700 mb-1">Name</label>
+                {/* <label className="block text-gray-700 mb-1">Name</label> */}
+                <label className="block text-gray-700 mb-1">Нэр</label>
                 <input
                   type="text"
                   placeholder="seller name"
@@ -170,7 +175,8 @@ const Signup = () => {
                   </p>
                 )}
 
-                <label className="block text-gray-700 mb-1">Email</label>
+                {/* <label className="block text-gray-700 mb-1">Email</label> */}
+                <label className="block text-gray-700 mb-1">И-мэйл</label>
                 <input
                   type="email"
                   placeholder="support@nomadnet.com"
@@ -190,7 +196,8 @@ const Signup = () => {
                   </p>
                 )}
 
-                <label className="block text-gray-700 mb-1">Phone Number</label>
+                {/* <label className="block text-gray-700 mb-1">Phone Number</label> */}
+                <label className="block text-gray-700 mb-1">Утасны дугаар</label>
                 <input
                   type="tel"
                   placeholder="880178583****"
@@ -218,12 +225,14 @@ const Signup = () => {
                   </p>
                 )}
 
-                <label className="block text-gray-700 mb-1">Country</label>
+                {/* <label className="block text-gray-700 mb-1">Country</label> */}
+                <label className="block text-gray-700 mb-1">Улс</label>
                 <select
                   className="w-full p-2 border border-gray-300 outline-0 rounded-[4px] mb-1 bg-white"
                   {...register("country", { required: "Country is required" })}
                 >
-                  <option value="">Select your country</option>
+                  {/* <option value="">Select your country</option> */}
+                  <option value="">Улсаа сонгоно уу</option>
                   {countries.map((country) => (
                     <option key={country.code} value={country.code}>
                       {country.name}
@@ -237,7 +246,8 @@ const Signup = () => {
                   </p>
                 )}
 
-                <label className="block text-gray-700 mb-1">Password</label>
+                {/* <label className="block text-gray-700 mb-1">Password</label> */}
+                <label className="block text-gray-700 mb-1">Нууц үг</label>
                 <div className="relative">
                   <input
                     type={passwordVisible ? "text" : "password"}
@@ -270,7 +280,8 @@ const Signup = () => {
                   disabled={signupMutation.isPending}
                   className="w-full text-lg cursor-pointer mt-4 bg-black text-white py-2 rounded-lg"
                 >
-                  {signupMutation.isPending ? " Signing up..." : "Signup"}
+                  {/* {signupMutation.isPending ? " Signing up..." : "Signup"} */}
+                  {signupMutation.isPending ? "Бүртгүүлж байна..." : "Бүртгүүлэх"}
                 </button>
 
                 {signupMutation.isError &&
@@ -282,16 +293,19 @@ const Signup = () => {
                   )}
 
                 <p className="pt-3 text-center">
-                  Already have an account?{" "}
+                  {/* Already have an account?{" "} */}
+                  Бүртгэл аль хэдийн байна уу?{" "}
                   <Link href={"/login"} className="text-blue-500">
-                    Login
+                    {/* Login */}
+                    Нэвтрэх
                   </Link>
                 </p>
               </form>
             ) : (
               <div>
                 <h3 className="text-xl font-semibold text-center mb-4">
-                  Enter OTP
+                  {/* Enter OTP */}
+                  OTP оруулах
                 </h3>
                 <div className="flex justify-center gap-6">
                   {otp?.map((digit, index) => (
@@ -314,7 +328,8 @@ const Signup = () => {
                   disabled={verifyOtpMutation.isPending}
                   onClick={() => verifyOtpMutation.mutate()}
                 >
-                  {verifyOtpMutation.isPending ? "Verifying..." : "Verify OTP"}
+                  {/* {verifyOtpMutation.isPending ? "Verifying..." : "Verify OTP"} */}
+                  {verifyOtpMutation.isPending ? "Баталгаажуулж байна..." : "OTP баталгаажуулах"}
                 </button>
                 <p className="text-center text-sm mt-4">
                   {canResend ? (
@@ -322,10 +337,12 @@ const Signup = () => {
                       onClick={resendOtp}
                       className="text-blue-500 cursor-pointer"
                     >
-                      Resend OTP
+                      {/* Resend OTP */}
+                      OTP дахин илгээх
                     </button>
                   ) : (
-                    `Resend OTP in ${timer}s`
+                    {/* `Resend OTP in ${timer}s` */}
+                    `OTP ${timer}с-д дахин илгээх`
                   )}
                 </p>
                 {verifyOtpMutation?.isError &&
@@ -344,13 +361,15 @@ const Signup = () => {
         )}
         {activeStep === 3 && (
           <div className="text-center">
-            <h3 className="text-2xl font-semibold">Withdraw Method</h3>
+            {/* <h3 className="text-2xl font-semibold">Withdraw Method</h3> */}
+            <h3 className="text-2xl font-semibold">Мөнгө татах арга</h3>
             <br />
             <button
               className="w-full m-auto flex items-center justify-center gap-3 text-lg bg-[#334155] text-white py-2 rounded-lg"
               onClick={connectStipe}
             >
-              Connect Stripe <StripeLogo />
+              {/* Connect Stripe */}
+              Stripe холбох <StripeLogo />
             </button>
           </div>
         )}

@@ -60,7 +60,8 @@ const Header = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search for products..."
+            {/* placeholder="Search for products..." */}
+            placeholder="Бүтээгдэхүүн хайх..."
             className="w-full px-4 font-Poppins font-medium border-[2.5px] border-[#3489FF] outline-none h-[55px]"
           />
           <div
@@ -90,7 +91,8 @@ const Header = () => {
           )}
           {loadingSuggestions && (
             <div className="absolute w-full top-[60px] bg-white border border-gray-200 shadow-md z-50 px-4 py-3 text-sm text-gray-500">
-              Searching...
+              {/* Searching... */}
+              Хайж байна...
             </div>
           )}
         </div>
@@ -109,7 +111,8 @@ const Header = () => {
                   </Link>
                 </div>
                 <Link href={"/profile"}>
-                  <span className="block font-medium">Hello,</span>
+                  {/* <span className="block font-medium">Hello,</span> */}
+                  <span className="block font-medium">Сайн байна уу,</span>
                   <span className="font-semibold">
                     {user?.name?.split(" ")[0]}
                   </span>
@@ -124,9 +127,11 @@ const Header = () => {
                   <ProfileIcon />
                 </Link>
                 <Link href={"/login"}>
-                  <span className="block font-medium">Hello,</span>
+                  {/* <span className="block font-medium">Hello,</span> */}
+                  <span className="block font-medium">Сайн байна уу,</span>
                   <span className="font-semibold">
-                    {isLoading ? "..." : "Sign In"}
+                    {/* {isLoading ? "..." : "Sign In"} */}
+                    {isLoading ? "..." : "Нэвтрэх"}
                   </span>
                 </Link>
               </>

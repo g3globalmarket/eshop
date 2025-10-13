@@ -23,7 +23,8 @@ const Footer = () => {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2"></h2>
           <p className="text-sm mt-3">
-            Perfect ecommerce platform to start your business from scratch
+            {/* Perfect ecommerce platform to start your business from scratch */}
+            Бизнесээ эхнээс нь эхлүүлэх төгс цахим худалдааны платформ
           </p>
 
           {/* Social Icons */}
@@ -42,36 +43,43 @@ const Footer = () => {
 
         {/* My Account */}
         <div>
-          <h4 className="text-lg font-semibold">My Account</h4>
+          {/* <h4 className="text-lg font-semibold">My Account</h4> */}
+          <h4 className="text-lg font-semibold">Миний данс</h4>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
               <Link href="/track-orders" className="hover:underline">
-                Track Orders
+                {/* Track Orders */}
+                Захиалга хянах
               </Link>
             </li>
             <li>
               <Link href="/shipping" className="hover:underline">
-                Shipping
+                {/* Shipping */}
+                Хүргэлт
               </Link>
             </li>
             <li>
               <Link href="/wishlist" className="hover:underline">
-                Wishlist
+                {/* Wishlist */}
+                Хүсэлтийн жагсаалт
               </Link>
             </li>
             <li>
               <Link href="/account" className="hover:underline">
-                My Account
+                {/* My Account */}
+                Миний данс
               </Link>
             </li>
             <li>
               <Link href="/order-history" className="hover:underline">
-                Order History
+                {/* Order History */}
+                Захиалгын түүх
               </Link>
             </li>
             <li>
               <Link href="/returns" className="hover:underline">
-                Returns
+                {/* Returns */}
+                Буцаах
               </Link>
             </li>
           </ul>
@@ -79,36 +87,43 @@ const Footer = () => {
 
         {/* Information */}
         <div>
-          <h4 className="text-lg font-semibold">Information</h4>
+          {/* <h4 className="text-lg font-semibold">Information</h4> */}
+          <h4 className="text-lg font-semibold">Мэдээлэл</h4>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
               <Link href="/about" className="hover:underline">
-                Our Story
+                {/* Our Story */}
+                Манай түүх
               </Link>
             </li>
             <li>
               <Link href="/careers" className="hover:underline">
-                Careers
+                {/* Careers */}
+                Ажлын байр
               </Link>
             </li>
             <li>
               <Link href="/privacy-policy" className="hover:underline">
-                Privacy Policy
+                {/* Privacy Policy */}
+                Нууцлалын бодлого
               </Link>
             </li>
             <li>
               <Link href="/terms" className="hover:underline">
-                Terms & Conditions
+                {/* Terms & Conditions */}
+                Үйлчилгээний нөхцөл
               </Link>
             </li>
             <li>
               <Link href="/news" className="hover:underline">
-                Latest News
+                {/* Latest News */}
+                Сүүлийн мэдээ
               </Link>
             </li>
             <li>
               <Link href="/contact" className="hover:underline">
-                Contact Us
+                {/* Contact Us */}
+                Бидэнтэй холбогдох
               </Link>
             </li>
           </ul>
@@ -116,8 +131,10 @@ const Footer = () => {
 
         {/* Contact Info */}
         <div>
-          <h4 className="text-lg font-semibold">Talk To Us</h4>
-          <p className="text-sm mt-2">Got Questions? Call us</p>
+          {/* <h4 className="text-lg font-semibold">Talk To Us</h4> */}
+          <h4 className="text-lg font-semibold">Бидэнтэй ярилцах</h4>
+          {/* <p className="text-sm mt-2">Got Questions? Call us</p> */}
+          <p className="text-sm mt-2">Асуулт байна уу? Бидэнтэй холбогдоорой</p>
           <p className="text-xl font-bold text-black mt-1">+670 413 90 762</p>
 
           <div className="mt-3 flex items-center gap-2">
@@ -137,7 +154,8 @@ const Footer = () => {
       {/* Footer Bottom */}
       <div className="w-[90%] lg:w-[80%] mx-auto border-t border-gray-200 mt-10 pt-4 flex flex-col lg:flex-row items-center justify-between">
         <p className="text-sm">
-          © 2025 All Rights Reserved | nomadnet Private Ltd
+          {/* © 2025 All Rights Reserved | nomadnet Private Ltd */}
+          © 2025 Бүх эрх хуулиар хамгаалагдсан | nomadnet Private Ltd
         </p>
 
         {/* Back to Top Button */}

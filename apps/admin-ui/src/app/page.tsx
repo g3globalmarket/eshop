@@ -46,10 +46,12 @@ const Page = () => {
       <div className="md:w-[450px] pb-8 bg-slate-800 rounded-md shadow">
         <form className="p-5" onSubmit={handleSubmit(onSubmit)}>
           <h1 className="text-3xl pb-3 pt-4 font-semibold text-center text-white font-Poppins">
-            Welcome Admin
+            {/* Welcome Admin */}
+            Админ тавтай морил
           </h1>
           <Input
-            label="Email"
+            {/* label="Email" */}
+            label="И-мэйл"
             placeholder="support@nomadnet.com"
             {...register("email", {
               required: "Email is required",
@@ -62,7 +64,8 @@ const Page = () => {
 
           <div className="mt-3">
             <Input
-              label="Password"
+              {/* label="Password" */}
+              label="Нууц үг"
               type="password"
               placeholder="******"
               {...register("password", {
@@ -79,7 +82,8 @@ const Page = () => {
             {loginMutation.isPending ? (
               <div className="h-6 w-6 border-2 border-gray-100 border-t-transparent rounded-full animate-spin" />
             ) : (
-              <>Login</>
+              {/* <>Login</> */}
+              <>Нэвтрэх</>
             )}
           </button>
 
