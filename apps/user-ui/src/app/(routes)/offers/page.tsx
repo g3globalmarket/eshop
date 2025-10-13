@@ -112,19 +112,23 @@ const Page = () => {
       <div className="w-[90%] lg:w-[80%] m-auto">
         <div className="pb-[50px]">
           <h1 className="md:pt-[40px] font-[500] text-[44px] leading-[1] mb-[14px] font-jost">
-            All Offers
+            {/* All Offers */}
+            Бүх санал
           </h1>
           <Link href="/" className="text-[#55585b] hover:underline">
-            Home
+            {/* Home */}
+            Нүүр
           </Link>
           <span className="inline-block p-[1.5px] mx-1 bg-[#a8acb0] rounded-full"></span>
-          <span className="text-[#55585b]">All Offers</span>
+          {/* <span className="text-[#55585b]">All Offers</span> */}
+          <span className="text-[#55585b]">Бүх санал</span>
         </div>
 
         <div className="w-full flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <aside className="w-full lg:w-[270px] !rounded bg-white p-4 space-y-6 shadow-sm">
-            <h3 className="text-xl font-Poppins font-medium">Price Filter</h3>
+            {/* <h3 className="text-xl font-Poppins font-medium">Price Filter</h3> */}
+            <h3 className="text-xl font-Poppins font-medium">Үнийн шүүлтүүр</h3>
             <div className="ml-2">
               <Range
                 step={1}
@@ -177,17 +181,20 @@ const Page = () => {
                 }}
                 className="text-sm px-4 py-1 bg-gray-200 hover:bg-blue-600 hover:text-white transition !rounded"
               >
-                Apply
+                {/* Apply */}
+                Хэрэгжүүлэх
               </button>
             </div>
 
             {/* Categories */}
             <h3 className="text-xl font-Poppins font-medium border-b border-b-slate-300 pb-1">
-              Categories
+              {/* Categories */}
+              Ангилал
             </h3>
             <ul className="space-y-2 !mt-3">
               {isLoading ? (
-                <p>Loading...</p>
+                {/* <p>Loading...</p> */}
+                <p>Ачаалж байна...</p>
               ) : (
                 data?.categories?.map((category: any) => (
                   <li
@@ -210,7 +217,8 @@ const Page = () => {
 
             {/* Colors */}
             <h3 className="text-xl font-Poppins font-medium border-b border-b-slate-300 pb-1 mt-6">
-              Filter by Color
+              {/* Filter by Color */}
+              Өнгөөр шүүх
             </h3>
             <ul className="space-y-2 !mt-3">
               {colors.map((color) => (
@@ -237,7 +245,8 @@ const Page = () => {
 
             {/* Sizes */}
             <h3 className="text-xl font-Poppins font-medium border-b border-b-slate-300 pb-1 mt-6">
-              Filter by Size
+              {/* Filter by Size */}
+              Хэмжээгээр шүүх
             </h3>
             <ul className="space-y-2 !mt-3">
               {sizes.map((size) => (
@@ -278,7 +287,8 @@ const Page = () => {
                 ))}
               </div>
             ) : (
-              <p>No Offers found</p>
+              {/* <p>No Offers found</p> */}
+              <p>Санал олдсонгүй</p>
             )}
 
             {totalPages > 1 && (

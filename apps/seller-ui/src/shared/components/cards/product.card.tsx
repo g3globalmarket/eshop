@@ -59,7 +59,8 @@ const ProductCard = ({ product }: { product: any }) => {
         <div className="flex items-center gap-1 text-yellow-400 mt-2">
           <Star fill="#facc15" size={18} />
           <span className="text-sm">
-            {product?.ratings ? product?.ratings.toFixed(1) : "No Ratings Yet"}
+            {/* {product?.ratings ? product?.ratings.toFixed(1) : "No Ratings Yet"} */}
+            {product?.ratings ? product?.ratings.toFixed(1) : "Үнэлгээ байхгүй"}
           </span>
         </div>
 
@@ -75,7 +76,8 @@ const ProductCard = ({ product }: { product: any }) => {
             {/* Discount Badge (only if discount > 0) */}
             {discount > 0 && (
               <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-md">
-                {discount}% OFF
+                {/* {discount}% OFF */}
+                {discount}% Хямдрал
               </span>
             )}
           </div>
@@ -85,14 +87,16 @@ const ProductCard = ({ product }: { product: any }) => {
         {startingDate && endingDate && (
           <div className="text-sm text-gray-300 mt-2">
             <p>
-              Offer Running: {startingDate} - {endingDate}
+              {/* Offer Running: {startingDate} - {endingDate} */}
+              Санал үйлчилж байна: {startingDate} - {endingDate}
             </p>
           </div>
         )}
 
         {/* Sold Count */}
         <div className="text-sm text-green-400 mt-1">
-          {product?.sold > 0 ? `${product?.sold} Sold` : "Not Sold Yet"}
+          {/* {product?.sold > 0 ? `${product?.sold} Sold` : "Not Sold Yet"} */}
+          {product?.sold > 0 ? `${product?.sold} Борлогдсон` : "Одоогоор борлогдоогүй"}
         </div>
 
         {/* View Details Button */}
@@ -100,7 +104,8 @@ const ProductCard = ({ product }: { product: any }) => {
           href={`${process.env.NEXT_PUBLIC_USER_UI_LINK}/product/${product?.slug}`}
           className="mt-3 block bg-blue-600 text-center text-white py-2 rounded-md hover:bg-blue-700 transition"
         >
-          View Details
+          {/* View Details */}
+          Дэлгэрэнгүй харах
         </Link>
       </div>
     </div>

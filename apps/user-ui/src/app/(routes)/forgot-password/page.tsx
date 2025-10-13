@@ -143,10 +143,12 @@ const ForgotPassword = () => {
   return (
     <div className="w-full py-10 min-h-[85vh] bg-[#f1f1f1]">
       <h1 className="text-4xl font-Poppins font-semibold text-black text-center">
-        Forgot Password
+        {/* Forgot Password */}
+        Нууц үг мартсан
       </h1>
       <p className="text-center text-lg font-medium py-3 text-[#00000099]">
-        Home . Forgot-password
+        {/* Home . Forgot-password */}
+        Нүүр . Нууц үг мартсан
       </p>
 
       <div className="w-full flex justify-center">
@@ -154,17 +156,21 @@ const ForgotPassword = () => {
           {step === "email" && (
             <>
               <h3 className="text-3xl font-semibold text-center mb-2">
-                Login to Eshop
+                {/* Login to Eshop */}
+                Eshop-д нэвтрэх
               </h3>
               <p className="text-center text-gray-500 mb-4">
-                Go back to?{" "}
+                {/* Go back to?{" "} */}
+                Буцах уу?{" "}
                 <Link href={"/login"} className="text-blue-500">
-                  Login
+                  {/* Login */}
+                  Нэвтрэх
                 </Link>
               </p>
 
               <form onSubmit={handleSubmit(onSubmitEmail)}>
-                <label className="block text-gray-700 mb-1">Email</label>
+                {/* <label className="block text-gray-700 mb-1">Email</label> */}
+                <label className="block text-gray-700 mb-1">И-мэйл</label>
                 <input
                   type="email"
                   placeholder="support@nomadnet.com"
@@ -189,7 +195,8 @@ const ForgotPassword = () => {
                   disabled={requestOtpMutation.isPending}
                   className="w-full text-lg cursor-pointer mt-4 bg-black text-white py-2 rounded-lg"
                 >
-                  {requestOtpMutation.isPending ? "Sending OTP..." : "Submit"}
+                  {/* {requestOtpMutation.isPending ? "Sending OTP..." : "Submit"} */}
+                  {requestOtpMutation.isPending ? "OTP илгээж байна..." : "Илгээх"}
                 </button>
 
                 {serverError && (
@@ -202,7 +209,8 @@ const ForgotPassword = () => {
           {step === "otp" && (
             <>
               <h3 className="text-xl font-semibold text-center mb-4">
-                Enter OTP
+                {/* Enter OTP */}
+                OTP оруулах
               </h3>
               <div className="flex justify-center gap-6">
                 {otp.map((digit, index) => (
@@ -225,7 +233,8 @@ const ForgotPassword = () => {
                 className="w-full mt-4 text-lg cursor-pointer bg-black text-white py-2 rounded-lg"
                 disabled={verifyOtpMutation.isPending}
               >
-                {verifyOtpMutation.isPending ? "Verifying..." : "Verify OTP"}
+                {/* {verifyOtpMutation.isPending ? "Verifying..." : "Verify OTP"} */}
+                {verifyOtpMutation.isPending ? "Баталгаажуулж байна..." : "OTP баталгаажуулах"}
               </button>
 
               {canResend ? (
@@ -235,11 +244,13 @@ const ForgotPassword = () => {
                   }
                   className="text-blue-500 text-center mt-4 cursor-pointer"
                 >
-                  Resend OTP
+                  {/* Resend OTP */}
+                  OTP дахин илгээх
                 </button>
               ) : (
                 <p className="text-center text-sm mt-4">
-                  Resend OTP in {timer}s
+                  {/* Resend OTP in {timer}s */}
+                  OTP {timer}с-д дахин илгээх
                 </p>
               )}
 
@@ -252,13 +263,16 @@ const ForgotPassword = () => {
           {step === "reset" && (
             <>
               <h3 className="text-xl font-semibold text-center mb-4">
-                Reset Password
+                {/* Reset Password */}
+                Нууц үг сэргээх
               </h3>
               <form onSubmit={handleSubmit(onSubmitPassword)}>
-                <label className="block text-gray-700 mb-1">New Password</label>
+                {/* <label className="block text-gray-700 mb-1">New Password</label> */}
+                <label className="block text-gray-700 mb-1">Шинэ нууц үг</label>
                 <input
                   type="password"
-                  placeholder="Enter new password"
+                  // placeholder="Enter new password"
+                  placeholder="Шинэ нууц үг оруулах"
                   className="w-full p-2 border border-gray-300 outline-0 !rounded mb-1"
                   {...register("password", {
                     required: "Password is required",
@@ -279,9 +293,12 @@ const ForgotPassword = () => {
                   className="w-full mt-4 text-lg cursor-pointer bg-black text-white py-2 rounded-lg"
                   disabled={resetPasswordMutation.isPending}
                 >
-                  {resetPasswordMutation.isPending
+                  {/* {resetPasswordMutation.isPending
                     ? "Resetting..."
-                    : "Reset Password"}
+                    : "Reset Password"} */}
+                  {resetPasswordMutation.isPending
+                    ? "Сэргээж байна..."
+                    : "Нууц үг сэргээх"}
                 </button>
 
                 {serverError && (

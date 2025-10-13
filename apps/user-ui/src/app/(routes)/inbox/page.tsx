@@ -184,14 +184,17 @@ const ChatPage = () => {
         <div className="flex h-[80vh] shadow-sm overflow-hidden">
           <div className="w-[320px] border-r border-r-gray-200 bg-gray-50">
             <div className="p-4 border-b border-b-gray-200 text-lg font-semibold text-gray-800">
-              Messages
+              {/* Messages */}
+              Зурвас
             </div>
             <div className="divide-y divide-gray-200">
               {isLoading ? (
-                <div className="p-4 text-sm text-gray-500">Loading...</div>
+                {/* <div className="p-4 text-sm text-gray-500">Loading...</div> */}
+                <div className="p-4 text-sm text-gray-500">Ачаалж байна...</div>
               ) : chats.length === 0 ? (
                 <div className="p-4 text-sm text-gray-500">
-                  No conversations
+                  {/* No conversations */}
+                  Ярилцлага байхгүй
                 </div>
               ) : (
                 chats.map((chat) => {
@@ -262,7 +265,8 @@ const ChatPage = () => {
                       {selectedChat.seller?.name}
                     </h2>
                     <p className="text-xs text-gray-500">
-                      {selectedChat.seller?.isOnline ? "Online" : "Offline"}
+                      {/* {selectedChat.seller?.isOnline ? "Online" : "Offline"} */}
+                      {selectedChat.seller?.isOnline ? "Онлайн" : "Офлайн"}
                     </p>
                   </div>
                 </div>
@@ -277,7 +281,8 @@ const ChatPage = () => {
                         onClick={loadMoreMessages}
                         className="text-xs px-4 py-1 bg-gray-200 hover:bg-gray-300 rounded-full text-gray-700"
                       >
-                        Load previous messages
+                        {/* Load previous messages */}
+                        Өмнөх зурвасуудыг ачаалах
                       </button>
                     </div>
                   )}
@@ -325,7 +330,8 @@ const ChatPage = () => {
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-                Select a conversation to start chatting
+                {/* Select a conversation to start chatting */}
+                Чат эхлүүлэхийн тулд ярилцлага сонгоно уу
               </div>
             )}
           </div>
