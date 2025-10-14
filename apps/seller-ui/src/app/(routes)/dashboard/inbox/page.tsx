@@ -120,7 +120,7 @@ const ChatPage = () => {
         );
       }
     };
-  }, [ws, conversationId]);
+  }, [ws, conversationId, queryClient]);
 
   const handleChatSelect = (chat: any) => {
     setHasFetchedOnce(false);
@@ -160,7 +160,6 @@ const ChatPage = () => {
     };
 
     ws.send(JSON.stringify(payload));
-
     setMessage("");
     scrollToBottom();
   };
@@ -171,12 +170,10 @@ const ChatPage = () => {
         {/* Sidebar */}
         <div className="w-[320px] border-r border-gray-800 bg-gray-950">
           <div className="p-4 border-b border-gray-800 text-lg font-semibold">
-            {/* Messages */}
             Зурвас
           </div>
           <div className="divide-y divide-gray-900">
             {isLoading ? (
-              {/* <div className="text-center py-5 text-sm">Loading...</div> */}
               <div className="text-center py-5 text-sm">Ачаалж байна...</div>
             ) : chats.length === 0 ? (
               <p className="text-center py-5 text-sm">
@@ -202,7 +199,7 @@ const ChatPage = () => {
                           chat.user?.avatar ||
                           "https://ik.imagekit.io/shahriarbecodemy/avatar/6_t8b5y8t3U.png"
                         }
-                        alt={chat.user?.name}
+                        alt={chat.user?.name || "avatar"}
                         width={36}
                         height={36}
                         className="rounded-full border w-[40px] h-[40px] object-cover"
@@ -246,7 +243,7 @@ const ChatPage = () => {
                     selectedChat.user?.avatar ||
                     "https://ik.imagekit.io/shahriarbecodemy/avatar/6_t8b5y8t3U.png"
                   }
-                  alt={selectedChat.user.name}
+                  alt={selectedChat.user?.name || "avatar"}
                   width={40}
                   height={40}
                   className="rounded-full border w-[40px] h-[40px] object-cover border-gray-700"
@@ -256,7 +253,6 @@ const ChatPage = () => {
                     {selectedChat.user?.name}{" "}
                   </h2>
                   <p className="text-xs text-gray-400">
-                    {/* {selectedChat.user?.isOnline ? "Online" : "Offline"} */}
                     {selectedChat.user?.isOnline ? "Онлайн" : "Офлайн"}
                   </p>
                 </div>
@@ -310,7 +306,6 @@ const ChatPage = () => {
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
-              {/* Select a conversation to start chatting */}
               Чат эхлүүлэхийн тулд ярилцлага сонгоно уу
             </div>
           )}
