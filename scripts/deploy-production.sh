@@ -1,6 +1,3 @@
-Вот полный обновлённый `scripts/deploy-production.sh` целиком (готов к замене файла):
-
-```bash
 #!/bin/bash
 set -e  # Exit on any error
 
@@ -177,4 +174,3 @@ else
   echo "  curl -v https://nomadnet.shop/gateway-health"
   exit 1
 fi
-```
