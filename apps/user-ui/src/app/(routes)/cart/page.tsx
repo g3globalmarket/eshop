@@ -52,7 +52,9 @@ const CartPage = () => {
         setDiscountPercent(0);
         setDiscountedProductId("");
         // setError(res.data.message || "Coupon not valid for any items in cart.");
-        setError(res.data.message || "Купон сагсанд байгаа бараанд хүчинтэй биш.");
+        setError(
+          res.data.message || "Купон сагсанд байгаа бараанд хүчинтэй биш."
+        );
       }
     } catch (error: any) {
       setDiscountAmount(0);
@@ -305,14 +307,19 @@ const CartPage = () => {
                 <hr className="my-4 text-slate-200" />
 
                 <div className="mb-4">
-                  <h4 className="mb-[7px] font-medium text-[15px]">
+                  {/* <h4 className="mb-[7px] font-medium text-[15px]">
                     Select Shipping Address
+                  </h4> */}
+                  <h4 className="mb-[7px] font-medium text-[15px]">
+                    Хүргэлтийн хаяг сонгох
                   </h4>
                   {addresses?.length !== 0 && (
                     <select
                       className="w-full p-2 border border-gray-200 rounded-md focus:outline-none focus:border-blue-500"
                       value={selectedAddressId}
-                      onChange={(e:any) => setSelectedAddressId(e.target.value)}
+                      onChange={(e: any) =>
+                        setSelectedAddressId(e.target.value)
+                      }
                     >
                       {addresses?.map((address: any) => (
                         <option key={address.id} value={address.id}>
@@ -330,9 +337,13 @@ const CartPage = () => {
                 <hr className="my-4 text-slate-200" />
 
                 <div className="mb-4">
-                  <h4 className="mb-[7px] font-[500] text-[15px]">
+                  {/* <h4 className="mb-[7px] font-[500] text-[15px]">
                     Select Payment Method
+                  </h4> */}
+                  <h4 className="mb-[7px] font-[500] text-[15px]">
+                    Төлбөрийн арга сонгох
                   </h4>
+
                   <select className="w-full p-2 border border-gray-200 rounded-md focus:outline-none focus:border-blue-500">
                     <option value="credit_card">Online Payment</option>
                     <option value="cash_on_delivery">Cash on Delivery</option>
