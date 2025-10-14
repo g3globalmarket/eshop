@@ -109,20 +109,19 @@ const SellerProfile = ({
     },
   });
 
-   useEffect(() => {
-      if (!isLoading) {
-        if (!location || !deviceInfo || !user?.id) return;
-        sendKafkaEvent({
-          userId: user?.id,
-          shopId: shop?.id,
-          action: "shop_visit",
-          country: location?.country || "Unknown",
-          city: location?.city || "Unknown",
-          device: deviceInfo || "Unknown Device",
-        });
-      }
-    }, [location, deviceInfo, isLoading]);
-  
+  useEffect(() => {
+    if (!isLoading) {
+      if (!location || !deviceInfo || !user?.id) return;
+      sendKafkaEvent({
+        userId: user?.id,
+        shopId: shop?.id,
+        action: "shop_visit",
+        country: location?.country || "Unknown",
+        city: location?.city || "Unknown",
+        device: deviceInfo || "Unknown Device",
+      });
+    }
+  }, [location, deviceInfo, isLoading]);
 
   return (
     <div>
@@ -203,7 +202,9 @@ const SellerProfile = ({
 
         <div className="bg-gray-200 p-6 rounded-lg shadow-lg w-full lg:w-[30%]">
           {/* <h2 className="text-xl font-semibold text-slate-900">Shop Details</h2> */}
-          <h2 className="text-xl font-semibold text-slate-900">Дэлгүүрийн дэлгэрэнгүй</h2>
+          <h2 className="text-xl font-semibold text-slate-900">
+            Дэлгүүрийн дэлгэрэнгүй
+          </h2>
 
           <div className="flex items-center gap-3 mt-3 text-slate-700">
             <Calendar size={18} />
@@ -227,8 +228,10 @@ const SellerProfile = ({
 
           {shop?.socialLinks && shop?.socialLinks.length > 0 && (
             <div className="mt-3">
-                    {/* <h3 className="text-slate-700 text-lg font-medium">Follow Us:</h3> */}
-                    <h3 className="text-slate-700 text-lg font-medium">Биднийг дагаарай:</h3>
+              {/* <h3 className="text-slate-700 text-lg font-medium">Follow Us:</h3> */}
+              <h3 className="text-slate-700 text-lg font-medium">
+                Биднийг дагаарай:
+              </h3>
               <div className="flex gap-3 mt-2">
                 {shop?.socialLinks?.map((link: any, index: number) => (
                   <a
