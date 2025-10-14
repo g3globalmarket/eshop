@@ -1,21 +1,42 @@
 import prisma from "@packages/libs/prisma";
-import { NextFunction, Response } from "express";
+import { NextFunction, Response, Request } from "express";
 import { recommendProducts } from "../services/recommendationService";
 
-// get recommended products
+// helper: популярные товары для анонима
+async function getPopularProducts(limit = 10) {
+  return prisma.products.findMany({
+    include: { images: true, Shop: true },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+}
+
+// GET /recommendation/api/get-recommendation-products
 export const getRecommendedProducts = async (
-  req: any,
+  req: Request & { user?: { id?: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user.id;
+    // 1) userId может прийти из middleware или из заголовка, а может не прийти вовсе
+    const rawUserId =
+      req?.user?.id ?? (req.headers["x-user-id"] as string | undefined) ?? null;
 
+    // 2) Если пользователя нет — не падаем, отдаем популярное
+    if (!rawUserId) {
+      const popular = await getPopularProducts(10);
+      return res.status(200).json({ success: true, recommendations: popular });
+    }
+
+    const userId = String(rawUserId);
+
+    // 3) Подтягиваем весь пул товаров один раз (можно оптимизировать и хранить в кеше)
     const products = await prisma.products.findMany({
       include: { images: true, Shop: true },
     });
 
-    let userAnalytics = await prisma.userAnalytics.findUnique({
+    // 4) Аналитика пользователя (может отсутствовать)
+    const userAnalytics = await prisma.userAnalytics.findUnique({
       where: { userId },
       select: { actions: true, recommendations: true, lastTrained: true },
     });
@@ -24,7 +45,10 @@ export const getRecommendedProducts = async (
     let recommendedProducts = [];
 
     if (!userAnalytics) {
-      recommendedProducts = products.slice(-10);
+      // нет аналитики — вернем популярное и создадим пустую запись на будущее (без обязательности)
+      recommendedProducts = await getPopularProducts(10);
+      // необязательно: можно асинхронно инициировать запись
+      // void prisma.userAnalytics.create({ data: { userId, actions: [], recommendations: [], lastTrained: null }});
     } else {
       const actions = Array.isArray(userAnalytics.actions)
         ? (userAnalytics.actions as any[])
@@ -37,37 +61,55 @@ export const getRecommendedProducts = async (
       const lastTrainedTime = userAnalytics.lastTrained
         ? new Date(userAnalytics.lastTrained)
         : null;
+
       const hoursDiff = lastTrainedTime
         ? (now.getTime() - lastTrainedTime.getTime()) / (1000 * 60 * 60)
         : Infinity;
 
       if (actions.length < 50) {
-        recommendedProducts = products.slice(-10);
+        // данных мало — вернем популярное
+        recommendedProducts = await getPopularProducts(10);
       } else if (hoursDiff < 3 && recommendations.length > 0) {
-        recommendedProducts = products.filter((product) =>
-          recommendations.includes(product.id)
-        );
+        // используем кэш рекомендованных id
+        const ids = new Set(recommendations.map(String));
+        recommendedProducts = products.filter((p) => ids.has(String(p.id)));
+        if (recommendedProducts.length === 0) {
+          recommendedProducts = await getPopularProducts(10);
+        }
       } else {
+        // пересчет рекомендаций
         const recommendedProductIds = await recommendProducts(userId, products);
-        recommendedProducts = products.filter((product) =>
-          recommendedProductIds.includes(product.id)
-        );
+        const ids = new Set(recommendedProductIds.map(String));
+        recommendedProducts = products.filter((p) => ids.has(String(p.id)));
 
-        await prisma.userAnalytics.update({
+        // обновим кэш
+        await prisma.userAnalytics.upsert({
           where: { userId },
-          data: {
+          update: { recommendations: recommendedProductIds, lastTrained: now },
+          create: {
+            userId,
+            actions: [],
             recommendations: recommendedProductIds,
             lastTrained: now,
           },
         });
+
+        if (recommendedProducts.length === 0) {
+          recommendedProducts = await getPopularProducts(10);
+        }
       }
     }
 
-    res.status(200).json({
-      success: true,
-      recommendations: recommendedProducts,
-    });
+    return res
+      .status(200)
+      .json({ success: true, recommendations: recommendedProducts });
   } catch (error) {
-    return next(error);
+    // не отдаём 500 пользователю — лучше пустой список + лог
+    console.error("getRecommendedProducts error:", error);
+    return res
+      .status(200)
+      .json({ success: true, recommendations: [], note: "fallback" });
+    // если принципиально нужен 500 — замените на next(error)
+    // return next(error);
   }
 };
