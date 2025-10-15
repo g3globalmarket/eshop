@@ -93,7 +93,7 @@ const Page = () => {
         {/* Gretting */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-gray-800">
-            Welcome back,{" "}
+            //Welcome back, Сайн байна уу,{" "}
             <span className="text-blue-600">
               {isLoading ? (
                 <Loader2 className="inline animate-spin w-5 h-5" />
@@ -107,14 +107,22 @@ const Page = () => {
 
         {/* Profile Overview Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <StatCard title="Total Orders" count={totalOrders} Icon={Clock} />
+          {/* <StatCard title="Total Orders" count={totalOrders} Icon={Clock} /> */}
           <StatCard
-            title="Processing Orders"
+            title="Нийт захиалгын тоо"
+            count={totalOrders}
+            Icon={Clock}
+          />
+
+          <StatCard
+            title="Уншиж байгаа захиалгын тоо"
+            // title="Processing Orders"
             count={processingOrders}
             Icon={Truck}
           />
           <StatCard
-            title="Completed Orders"
+            title="Дууссан захиалгын тоо"
+            // title="Completed Orders"
             count={completedOrders}
             Icon={CheckCircle}
           />
@@ -126,7 +134,8 @@ const Page = () => {
           <div className="bg-white p-4 rounded-md shadow-sm border border-gray-100 w-full md:w-1/5">
             <nav className="space-y-2">
               <NavItem
-                label="Profile"
+                // label="Profile"
+                label="Профайл"
                 Icon={User}
                 active={activeTab === "Profile"}
                 onClick={() => setActiveTab("Profile")}
