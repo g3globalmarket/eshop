@@ -93,7 +93,7 @@ const Page = () => {
         {/* Gretting */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-gray-800">
-            //Welcome back, Сайн байна уу,{" "}
+            Сайн байна уу,{" "}
             <span className="text-blue-600">
               {isLoading ? (
                 <Loader2 className="inline animate-spin w-5 h-5" />

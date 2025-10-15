@@ -68,16 +68,18 @@ const SidebarWrapper = () => {
       <div className="block my-3 h-full">
         <Sidebar.Body className="body sidebar">
           <SidebarItem
-            title="Dashboard"
+            title="Админ самбар"
             icon={<Home fill={getIconColor("/dashboard")} />}
             isActive={activeSidebar === "/dashboard"}
             href="/dashboard"
           />
+
           <div className="mt-2 block">
-            <SidebarMenu title="Main Menu">
+            {/* Үндсэн цэс */}
+            <SidebarMenu title="Үндсэн цэс">
               <SidebarItem
                 isActive={activeSidebar === "/dashboard/orders"}
-                title="Orders"
+                title="Захиалгууд"
                 href="/dashboard/orders"
                 icon={
                   <ListOrdered
@@ -86,15 +88,17 @@ const SidebarWrapper = () => {
                   />
                 }
               />
+
               <SidebarItem
                 isActive={activeSidebar === "/dashboard/payments"}
-                title="Payments"
+                title="Төлбөрүүд"
                 href="/dashboard/payments"
                 icon={<Payment fill={getIconColor("/dashboard/payments")} />}
               />
+
               <SidebarItem
                 isActive={activeSidebar === "/dashboard/products"}
-                title="Products"
+                title="Бүтээгдэхүүн"
                 href="/dashboard/products"
                 icon={
                   <PackageSearch
@@ -106,7 +110,7 @@ const SidebarWrapper = () => {
 
               <SidebarItem
                 isActive={activeSidebar === "/dashboard/events"}
-                title="Events"
+                title="Арга хэмжээ"
                 href="/dashboard/events"
                 icon={
                   <BellPlus
@@ -118,7 +122,7 @@ const SidebarWrapper = () => {
 
               <SidebarItem
                 isActive={activeSidebar === "/dashboard/users"}
-                title="Users"
+                title="Хэрэглэгчид"
                 href="/dashboard/users"
                 icon={
                   <Users size={24} color={getIconColor("/dashboard/users")} />
@@ -127,17 +131,19 @@ const SidebarWrapper = () => {
 
               <SidebarItem
                 isActive={activeSidebar === "/dashboard/sellers"}
-                title="Sellers"
+                title="Борлуулагчид"
                 href="/dashboard/sellers"
                 icon={
                   <Store size={22} color={getIconColor("/dashboard/sellers")} />
                 }
               />
             </SidebarMenu>
-            <SidebarMenu title="Controllers">
+
+            {/* Удирдлага */}
+            <SidebarMenu title="Удирдлага">
               <SidebarItem
                 isActive={activeSidebar === "/dashboard/loggers"}
-                title="Loggers"
+                title="Логууд"
                 href="/dashboard/loggers"
                 icon={
                   <FileClock
@@ -148,7 +154,7 @@ const SidebarWrapper = () => {
               />
               <SidebarItem
                 isActive={activeSidebar === "/dashboard/management"}
-                title="Management"
+                title="Тохиргоо"
                 href="/dashboard/management"
                 icon={
                   <Settings
@@ -159,7 +165,7 @@ const SidebarWrapper = () => {
               />
               <SidebarItem
                 isActive={activeSidebar === "/dashboard/notifications"}
-                title="Notifications"
+                title="Мэдэгдлүүд"
                 href="/dashboard/notifications"
                 icon={
                   <BellRing
@@ -169,10 +175,12 @@ const SidebarWrapper = () => {
                 }
               />
             </SidebarMenu>
-            <SidebarMenu title="Customization">
+
+            {/* Тохируулга */}
+            <SidebarMenu title="Тохируулга">
               <SidebarItem
                 isActive={activeSidebar === "/dashboard/customization"}
-                title="All Customization"
+                title="Бүх тохируулга"
                 href="/dashboard/customization"
                 icon={
                   <PencilRuler
@@ -182,10 +190,12 @@ const SidebarWrapper = () => {
                 }
               />
             </SidebarMenu>
-            <SidebarMenu title="Extras">
+
+            {/* Нэмэлтүүд */}
+            <SidebarMenu title="Нэмэлтүүд">
               <SidebarItem
                 isActive={activeSidebar === "/logout"}
-                title="Logout"
+                title="Гарах"
                 href="/"
                 icon={<LogOut size={20} color={getIconColor("/logout")} />}
               />
