@@ -132,37 +132,43 @@ const Page = () => {
                 onClick={() => setActiveTab("Profile")}
               />
               <NavItem
-                label="My Orders"
+                label="Захиалгын жагсаалт"
+                // label="My Orders"
                 Icon={ShoppingBag}
                 active={activeTab === "My Orders"}
                 onClick={() => setActiveTab("My Orders")}
               />
               <NavItem
-                label="Inbox"
+                label="И-мэйл"
+                // label="Inbox"
                 Icon={Inbox}
                 active={activeTab === "Inbox"}
                 onClick={() => router.push("/inbox")}
               />
               <NavItem
-                label="Notifications"
+                label="Мэдэгдэл"
+                // label="Notifications"
                 Icon={Bell}
                 active={activeTab === "Notifications"}
                 onClick={() => setActiveTab("Notifications")}
               />
               <NavItem
-                label="Shipping Address"
+                label="Худалдан авах хаяг"
+                // label="Shipping Address"
                 Icon={MapPin}
                 active={activeTab === "Shipping Address"}
                 onClick={() => setActiveTab("Shipping Address")}
               />
               <NavItem
-                label="Change Password"
+                label="Нууц үг солих"
+                // label="Change Password"
                 Icon={Lock}
                 active={activeTab === "Change Password"}
                 onClick={() => setActiveTab("Change Password")}
               />
               <NavItem
-                label="Logout"
+                label="Гарах"
+                // label="Logout"
                 Icon={LogOut}
                 danger
                 onClick={() => logOutHandler()}
@@ -188,22 +194,30 @@ const Page = () => {
                     height={60}
                     className="w-16 h-16 rounded-full border border-gray-200"
                   />
-                  <button className="flex items-center gap-1 text-blue-500 text-xs font-medium">
+                  {/* <button className="flex items-center gap-1 text-blue-500 text-xs font-medium">
                     <Pencil className="w-4 h-4" /> Change Photo
+                  </button> */}
+
+                  <button className="flex items-center gap-1 text-blue-500 text-xs font-medium">
+                    <Pencil className="w-4 h-4" /> Өөрчилэх
                   </button>
                 </div>
                 <p>
-                  <span className="font-semibold">Name:</span> {user.name}
+                  {/* <span className="font-semibold">Name:</span> {user.name} */}
+                  <span className="font-semibold">Нэр:</span> {user.name}
                 </p>
                 <p>
-                  <span className="font-semibold">Email:</span> {user.email}
+                  {/* <span className="font-semibold">Email:</span> {user.email} */}
+                  <span className="font-semibold">И-мэйл:</span> {user.email}
                 </p>
                 <p>
-                  <span className="font-semibold">Joined:</span>{" "}
+                  {/* <span className="font-semibold">Joined:</span>{" "} */}
+                  <span className="font-semibold">Бүртгүүлсэн огноо:</span>{" "}
                   {new Date(user.createdAt).toLocaleDateString()}
                 </p>
                 <p>
-                  <span className="font-semibold">Earned Points:</span>{" "}
+                  {/* <span className="font-semibold">Earned Points:</span>{" "} */}
+                  <span className="font-semibold">Амжилттай оноо:</span>{" "}
                   {user.points || 0}
                 </p>
               </div>
@@ -262,27 +276,32 @@ const Page = () => {
           <div className="w-full md:w-1/4 space-y-4">
             <QuickActionCard
               Icon={Gift}
-              title="Referral Program"
+              //title="Referral Program"
+              title="Сэтгэл хүүгээр зарах"
               description="Invite friends and earn rewards."
             />
             <QuickActionCard
               Icon={BadgeCheck}
-              title="Your Badges"
+              // title="Your Badges"
+              title="Таны хүсэгчдийн жагсаалт"
               description="View your earned achievements."
             />
             <QuickActionCard
               Icon={Settings}
-              title="Account Settings"
+              // title="Account Settings"
+              title="Хувийн тохиргоо"
               description="Manage preferences and security."
             />
             <QuickActionCard
               Icon={Receipt}
-              title="Billing History"
+              // title="Billing History"
+              title="Түлсэн төлөвлөгөө"
               description="Check your recent payments."
             />
             <QuickActionCard
               Icon={PhoneCall}
-              title="Support Center"
+              // title="Support Center"
+              title="Тусламжын төв"
               description="Need help? Contact support."
             />
           </div>
