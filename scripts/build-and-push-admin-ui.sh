@@ -42,3 +42,4 @@ echo "✅ Successfully built and pushed $SERVICE to Docker Hub!"
 echo "🔗 Image: $DOCKERHUB_USERNAME/$SERVICE:$TAG"
 echo "🔗 Image: $DOCKERHUB_USERNAME/$SERVICE:latest"
 
+
