@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Router, Request, Response } from "express";
 import cors from "cors";
 import proxy from "express-http-proxy";
 import morgan from "morgan";
@@ -17,6 +17,7 @@ const allowedOrigins = isProduction
       "https://nomadnet.shop",
       "https://sellers.nomadnet.shop",
       "https://admin.nomadnet.shop",
+      "https://sandbox.nomadnet.shop", // ← добавлено
       "http://nginx",
       "http://localhost",
     ]
@@ -43,21 +44,49 @@ app.set("trust proxy", isProduction ? "loopback" : 1);
 // Enhanced rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Simplified rate limit - auth should be handled by individual services
+  max: 1000,
   message: { error: "Too many requests, please try again later!" },
   standardHeaders: true,
-  legacyHeaders: false, // Disable legacy headers in production
+  legacyHeaders: false,
   keyGenerator: (req: any) => req.ip,
-  skip: (req) => {
-    // Skip rate limiting for health checks
-    return req.path === "/gateway-health";
-  },
+  skip: (req) => req.path === "/gateway-health", // Skip for health checks
 });
 
 app.use(limiter);
 
-// Health check endpoint
-app.get("/gateway-health", (req, res) => {
+// ───────────────────────────────────────────────────────────────────────────────
+// Simple.mn callbacks router (новое)
+// ───────────────────────────────────────────────────────────────────────────────
+const simpleRouter: Router = Router();
+
+// health/ping для проверки
+simpleRouter.get("/_health", (_req: Request, res: Response) => {
+  res.status(200).send("OK");
+});
+
+// Коллбэки Simple — пока заглушки 200 (логируем тело)
+simpleRouter.post("/success", (req: Request, res: Response) => {
+  console.log("[Simple] success", { body: req.body });
+  res.status(200).json({ ok: true });
+});
+
+simpleRouter.post("/fail", (req: Request, res: Response) => {
+  console.log("[Simple] fail", { body: req.body });
+  res.status(200).json({ ok: true });
+});
+
+simpleRouter.post("/notify", (req: Request, res: Response) => {
+  console.log("[Simple] notify", { body: req.body });
+  res.status(200).json({ ok: true });
+});
+
+// повесим весь префикс на /payments/simple
+app.use("/payments/simple", simpleRouter);
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Health check endpoint (gateway-level)
+// ───────────────────────────────────────────────────────────────────────────────
+app.get("/gateway-health", (_req, res) => {
   res.status(200).json({
     message: "API Gateway is healthy!",
     timestamp: new Date().toISOString(),
@@ -79,31 +108,16 @@ const getServiceUrl = (serviceName: string, port: number) => {
 // Enhanced proxy configuration with error handling
 const createProxyMiddleware = (serviceUrl: string, serviceName: string) => {
   return proxy(serviceUrl, {
-    timeout: 30000, // 30 second timeout
+    timeout: 30000, // 30s
     proxyReqOptDecorator: (
       proxyReqOpts: { headers: any },
-      srcReq: { ip: any; get: (arg0: string) => any }
+      srcReq: { ip: any; get: (k: string) => any }
     ) => {
-      // Forward original IP for proper rate limiting in downstream services
       proxyReqOpts.headers!["X-Forwarded-For"] = srcReq.ip;
       proxyReqOpts.headers!["X-Original-Host"] = srcReq.get("host");
       return proxyReqOpts;
     },
-    proxyErrorHandler: (
-      err: { message: any },
-      res: {
-        headersSent: any;
-        status: (arg0: number) => {
-          (): any;
-          new (): any;
-          json: {
-            (arg0: { error: string; service: string; timestamp: string }): void;
-            new (): any;
-          };
-        };
-      },
-      next: any
-    ) => {
+    proxyErrorHandler: (err: { message: any }, res: any) => {
       console.error(`Proxy error for ${serviceName}:`, err.message);
       if (!res.headersSent) {
         res.status(503).json({
@@ -166,12 +180,11 @@ app.use(
 app.use(
   (
     err: any,
-    req: express.Request,
+    _req: express.Request,
     res: express.Response,
-    next: express.NextFunction
+    _next: express.NextFunction
   ) => {
     console.error("Global error handler:", err);
-
     if (!res.headersSent) {
       res.status(500).json({
         error: isProduction ? "Internal server error" : err.message,
