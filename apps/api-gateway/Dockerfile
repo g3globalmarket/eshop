@@ -1,34 +1,42 @@
-# ---- Build Stage ----
 FROM node:20-alpine AS builder
+WORKDIR /repo
 
-WORKDIR /app
-
-COPY apps/api-gateway/package.json ./
-COPY pnpm-lock.yaml ./
-COPY pnpm-workspace.yaml ./
+# Корень монорепы + pkg сервиса + (если есть) prisma
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api-gateway/package.json apps/api-gateway/package.json
 COPY prisma ./prisma
 
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-RUN pnpm install --prod
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 
+# 1) Устанавливаем зависимости монорепы (dev тоже — нужен prisma CLI)
+RUN pnpm install --no-frozen-lockfile
 
-RUN npx prisma generate
+# 2) Копируем весь репозиторий и билдим сервис
+COPY . .
+WORKDIR /repo/apps/api-gateway
+RUN pnpm build
 
-COPY apps/api-gateway/dist ./dist
+# 3) Готовим самодостаточную папку (без pnpm-симлинков)
+WORKDIR /repo
+RUN pnpm deploy --filter "./apps/api-gateway" /out
 
-# ---- Production Stage ----
-FROM node:20-alpine
+# 4) Генерим Prisma-клиент ВНУТРИ /out (где свои node_modules)
+WORKDIR /out
+# используем prisma из корня, указываем явный путь к схеме
+RUN node /repo/node_modules/.bin/prisma generate --schema=/repo/prisma/schema.prisma || \
+    npx prisma generate --schema=/repo/prisma/schema.prisma
 
+# ---- Runtime ----
+FROM node:20-alpine AS runner
+RUN apk add --no-cache curl
 WORKDIR /app
-
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
-
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/prisma ./prisma
-
+ENV NODE_ENV=production
 EXPOSE 8080
 
-CMD ["node", "dist/main.js"]
+# 5) Копируем готовый артефакт
+COPY --from=builder /out/ ./
+COPY prisma ./prisma
+RUN node ./node_modules/.bin/prisma generate --schema=/app/prisma/schema.prisma || npx prisma generate --schema=/app/prisma/schema.prisma
+
+# 6) Старт
+CMD ["node","dist/main.js"]
