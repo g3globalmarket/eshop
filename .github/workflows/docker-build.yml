@@ -325,6 +325,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Preflight: check SSH reachability
+        shell: bash
+        env:
+          HOST: ${{ secrets.EC2_HOST }}  # твой публичный IP/домен
+          PORT: 22                       # поменяй, если SSH не на 22
+        run: |
+          echo "Checking reachability to $HOST:$PORT ..."
+          if command -v nc >/dev/null 2>&1; then
+            nc -zv -w5 "$HOST" "$PORT"
+          else
+            # fallback без nc
+            timeout 5 bash -c "cat < /dev/null > /dev/tcp/$HOST/$PORT"
+          fi
+          echo "OK: $HOST:$PORT is reachable"
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
