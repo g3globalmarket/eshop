@@ -9,3 +9,7 @@ services:
       timeout: 10s
       start_period: 90s
       retries: 5
+  nginx:
+    volumes:
+      - /opt/letsencrypt:/etc/letsencrypt:ro
+      - /opt/certbot-www:/var/www/certbot
