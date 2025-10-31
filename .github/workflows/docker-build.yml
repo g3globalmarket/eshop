@@ -305,10 +305,11 @@ jobs:
           cache-to: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache,mode=max
 
   # Deploy to EC2
+
   deploy-to-ec2:
     needs: [detect-changes, build-backend, build-frontend]
     runs-on: ubuntu-latest
-    if: |
+    if: >-
       always() &&
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
       (
@@ -322,6 +323,7 @@ jobs:
         needs.detect-changes.outputs.has-frontend-changes == 'true' ||
         (github.event_name == 'workflow_dispatch' && github.event.inputs.force_rebuild == 'true')
       )
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
