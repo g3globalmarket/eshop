@@ -327,12 +327,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Preflight: check SSH reachability
+
+      - name: check SSH reachability
         shell: bash
         env:
-          HOST: ${{ secrets.EC2_HOST }}  # твой публичный IP/домен
-          PORT: 22                       # поменяй, если SSH не на 22
+          HOST: ${{ secrets.EC2_HOST }} # твой публичный IP/домен
+          PORT: 22 # поменяй, если SSH не на 22
         run: |
           echo "Checking reachability to $HOST:$PORT ..."
           if command -v nc >/dev/null 2>&1; then
