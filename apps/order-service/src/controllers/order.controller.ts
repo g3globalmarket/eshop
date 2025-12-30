@@ -9,7 +9,7 @@ import { sendEmail } from "../utils/send-email";
 import { sendLog } from "@packages/utils/logs/send-logs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
+  apiVersion: "2025-02-24.acacia" as any,
 });
 
 // create payment intent
