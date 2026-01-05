@@ -10,6 +10,7 @@ import {
   updateDeliveryStatus,
   verifyCouponCode,
   verifyingPaymentSession,
+  confirmQPayPayment,
 } from "../controllers/order.controller";
 import { isAdmin, isSeller } from "@packages/middleware/authorizeRoles";
 
@@ -17,6 +18,7 @@ const router: Router = express.Router();
 
 router.post("/create-payment-intent", isAuthenticated, createPaymentIntent);
 router.post("/create-payment-session", isAuthenticated, createPaymentSession);
+router.post("/qpay/confirm", isAuthenticated, confirmQPayPayment);
 router.get(
   "/verifying-payment-session",
   isAuthenticated,

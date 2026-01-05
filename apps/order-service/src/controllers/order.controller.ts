@@ -7,10 +7,199 @@ import Stripe from "stripe";
 import { Prisma } from "@prisma/client";
 import { sendEmail } from "../utils/send-email";
 import { sendLog } from "@packages/utils/logs/send-logs";
+import { getQPayClient } from "../payments/qpay.client";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-02-24.acacia" as any,
 });
+
+/**
+ * Helper function to create orders from payment session
+ * Extracted for reuse in both Stripe webhook and QPay confirm flows
+ */
+async function createOrdersFromSession(
+  sessionData: string,
+  userId: string,
+  sessionKey: string,
+  sessionId: string
+): Promise<void> {
+  const { cart, totalAmount, shippingAddressId, coupon } = JSON.parse(sessionData);
+
+  const user = await prisma.users.findUnique({ where: { id: userId } });
+  const name = user?.name!;
+  const email = user?.email!;
+
+  const shopGrouped = cart.reduce((acc: any, item: any) => {
+    if (!acc[item.shopId]) acc[item.shopId] = [];
+    acc[item.shopId].push(item);
+    return acc;
+  }, {});
+
+  for (const shopId in shopGrouped) {
+    const orderItems = shopGrouped[shopId];
+
+    let orderTotal = orderItems.reduce(
+      (sum: number, p: any) => sum + p.quantity * p.sale_price,
+      0
+    );
+    // Apply discount if applicable
+    if (
+      coupon &&
+      coupon.discountedProductId &&
+      orderItems.some((item: any) => item.id === coupon.discountedProductId)
+    ) {
+      const discountedItem = orderItems.find(
+        (item: any) => item.id === coupon.discountedProductId
+      );
+      if (discountedItem) {
+        const discount =
+          coupon.discountPercent > 0
+            ? (discountedItem.sale_price *
+                discountedItem.quantity *
+                coupon.discountPercent) /
+              100
+            : coupon.discountAmount;
+
+        orderTotal -= discount;
+      }
+    }
+
+    // Create order
+    const order = await prisma.orders.create({
+      data: {
+        userId,
+        shopId,
+        total: orderTotal,
+        status: "Paid",
+        shippingAddressId: shippingAddressId || null,
+        couponCode: coupon?.code || null,
+        discountAmount: coupon?.discountAmount || 0,
+        items: {
+          create: orderItems.map((item: any) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            price: item.sale_price,
+            selectedOptions: item.selectedOptions,
+          })),
+        },
+      },
+    });
+
+    // Update product & analytics
+    for (const item of orderItems) {
+      const { id: productId, quantity } = item;
+
+      await prisma.products.update({
+        where: { id: productId },
+        data: {
+          stock: { decrement: quantity },
+          totalSales: { increment: quantity },
+        },
+      });
+
+      await prisma.productAnalytics.upsert({
+        where: { productId },
+        create: {
+          productId,
+          shopId,
+          purchases: quantity,
+          lastViewedAt: new Date(),
+        },
+        update: {
+          purchases: { increment: quantity },
+        },
+      });
+
+      const existingAnalytics = await prisma.userAnalytics.findUnique({
+        where: { userId },
+      });
+
+      const newAction = {
+        productId,
+        shopId,
+        action: "purchase",
+        timestamp: Date.now(),
+      };
+
+      const currentActions = Array.isArray(existingAnalytics?.actions)
+        ? (existingAnalytics.actions as Prisma.JsonArray)
+        : [];
+
+      if (existingAnalytics) {
+        await prisma.userAnalytics.update({
+          where: { userId },
+          data: {
+            lastVisited: new Date(),
+            actions: [...currentActions, newAction],
+          },
+        });
+      } else {
+        await prisma.userAnalytics.create({
+          data: {
+            userId,
+            lastVisited: new Date(),
+            actions: [newAction],
+          },
+        });
+      }
+    }
+
+    // Send email for user
+    await sendEmail(
+      email,
+      "🛍️ Your Eshop Order Confirmation",
+      "order-confirmation",
+      {
+        name,
+        cart,
+        totalAmount: coupon?.discountAmount
+          ? totalAmount - coupon?.discountAmount
+          : totalAmount,
+        trackingUrl: `/order/${order.id}`,
+      }
+    );
+
+    // Create notifications for sellers
+    const createdShopIds = Object.keys(shopGrouped);
+    const sellerShops = await prisma.shops.findMany({
+      where: { id: { in: createdShopIds } },
+      select: {
+        id: true,
+        sellerId: true,
+        name: true,
+      },
+    });
+
+    for (const shop of sellerShops) {
+      const firstProduct = shopGrouped[shop.id][0];
+      const productTitle = firstProduct?.title || "new item";
+
+      await prisma.notifications.create({
+        data: {
+          title: "🛒 New Order Received",
+          message: `A customer just ordered ${productTitle} from your shop.`,
+          creatorId: userId,
+          receiverId: shop.sellerId,
+          redirect_link: `https://eshop.com/order/${sessionId}`,
+        },
+      });
+    }
+
+    // Create notification for admin
+    await prisma.notifications.create({
+      data: {
+        title: "📦 Platform Order Alert",
+        message: `A new order was placed by ${name}.`,
+        creatorId: userId,
+        receiverId: "admin",
+        redirect_link: `https://eshop.com/order/${sessionId}`,
+      },
+    });
+  }
+
+  // Delete session after successful order creation
+  await redis.del(sessionKey);
+}
 
 // create payment intent
 export const createPaymentIntent = async (
@@ -19,7 +208,55 @@ export const createPaymentIntent = async (
   next: NextFunction
 ) => {
   const { amount, sellerStripeAccountId, sessionId } = req.body;
+  const paymentProvider = process.env.PAYMENT_PROVIDER || "stripe";
 
+  // QPay path
+  if (paymentProvider === "qpay") {
+    try {
+      // Validate QPay env vars
+      if (
+        !process.env.QPAY_CLIENT_ID ||
+        !process.env.QPAY_CLIENT_SECRET ||
+        !process.env.QPAY_INVOICE_CODE ||
+        !process.env.QPAY_USD_TO_MNT_RATE
+      ) {
+        return res.status(500).json({
+          error: "QPay configuration missing. Please set QPAY_CLIENT_ID, QPAY_CLIENT_SECRET, QPAY_INVOICE_CODE, and QPAY_USD_TO_MNT_RATE",
+        });
+      }
+
+      // Get user email if available
+      const user = await prisma.users.findUnique({
+        where: { id: req.user.id },
+        select: { email: true },
+      });
+
+      const qpayClient = getQPayClient();
+      const invoice = await qpayClient.createInvoice({
+        sessionId,
+        userId: req.user.id,
+        amountUsd: amount,
+        userEmail: user?.email,
+      });
+
+      res.send({
+        clientSecret: invoice.invoice_id, // Keep field name for compatibility
+        provider: "qpay",
+        qpay: {
+          invoice_id: invoice.invoice_id,
+          qr_text: invoice.qr_text,
+          qr_image: invoice.qr_image,
+          urls: invoice.urls,
+        },
+      });
+    } catch (error: any) {
+      console.error("QPay invoice creation error:", error);
+      return next(error);
+    }
+    return;
+  }
+
+  // Stripe path (default)
   const customerAmount = Math.round(amount * 100);
   const platformFee = Math.floor(customerAmount * 0.1);
 
@@ -226,182 +463,7 @@ export const createOrder = async (
           .send("No session found, skipping order creation");
       }
 
-      const { cart, totalAmount, shippingAddressId, coupon } =
-        JSON.parse(sessionData);
-
-      const user = await prisma.users.findUnique({ where: { id: userId } });
-      const name = user?.name!;
-      const email = user?.email!;
-
-      const shopGrouped = cart.reduce((acc: any, item: any) => {
-        if (!acc[item.shopId]) acc[item.shopId] = [];
-        acc[item.shopId].push(item);
-        return acc;
-      }, {});
-
-      for (const shopId in shopGrouped) {
-        const orderItems = shopGrouped[shopId];
-
-        let orderTotal = orderItems.reduce(
-          (sum: number, p: any) => sum + p.quantity * p.sale_price,
-          0
-        );
-        // Apply discount if applicable
-        if (
-          coupon &&
-          coupon.discountedProductId &&
-          orderItems.some((item: any) => item.id === coupon.discountedProductId)
-        ) {
-          const discountedItem = orderItems.find(
-            (item: any) => item.id === coupon.discountedProductId
-          );
-          if (discountedItem) {
-            const discount =
-              coupon.discountPercent > 0
-                ? (discountedItem.sale_price *
-                    discountedItem.quantity *
-                    coupon.discountPercent) /
-                  100
-                : coupon.discountAmount;
-
-            orderTotal -= discount;
-          }
-        }
-
-        // Create order
-        const order = await prisma.orders.create({
-          data: {
-            userId,
-            shopId,
-            total: orderTotal,
-            status: "Paid",
-            shippingAddressId: shippingAddressId || null,
-            couponCode: coupon?.code || null,
-            discountAmount: coupon?.discountAmount || 0,
-            items: {
-              create: orderItems.map((item: any) => ({
-                productId: item.id,
-                quantity: item.quantity,
-                price: item.sale_price,
-                selectedOptions: item.selectedOptions,
-              })),
-            },
-          },
-        });
-
-        // Update product & analytics
-        for (const item of orderItems) {
-          const { id: productId, quantity } = item;
-
-          await prisma.products.update({
-            where: { id: productId },
-            data: {
-              stock: { decrement: quantity },
-              totalSales: { increment: quantity },
-            },
-          });
-
-          await prisma.productAnalytics.upsert({
-            where: { productId },
-            create: {
-              productId,
-              shopId,
-              purchases: quantity,
-              lastViewedAt: new Date(),
-            },
-            update: {
-              purchases: { increment: quantity },
-            },
-          });
-
-          const existingAnalytics = await prisma.userAnalytics.findUnique({
-            where: { userId },
-          });
-
-          const newAction = {
-            productId,
-            shopId,
-            action: "purchase",
-            timestamp: Date.now(),
-          };
-
-          const currentActions = Array.isArray(existingAnalytics?.actions)
-            ? (existingAnalytics.actions as Prisma.JsonArray)
-            : [];
-
-          if (existingAnalytics) {
-            await prisma.userAnalytics.update({
-              where: { userId },
-              data: {
-                lastVisited: new Date(),
-                actions: [...currentActions, newAction],
-              },
-            });
-          } else {
-            await prisma.userAnalytics.create({
-              data: {
-                userId,
-                lastVisited: new Date(),
-                actions: [newAction],
-              },
-            });
-          }
-        }
-
-        // Send email for user
-        await sendEmail(
-          email,
-          "🛍️ Your Eshop Order Confirmation",
-          "order-confirmation",
-          {
-            name,
-            cart,
-            totalAmount: coupon?.discountAmount
-              ? totalAmount - coupon?.discountAmount
-              : totalAmount,
-            trackingUrl: `/order/${order.id}`,
-          }
-        );
-
-        // Create notifications for sellers
-        const createdShopIds = Object.keys(shopGrouped);
-        const sellerShops = await prisma.shops.findMany({
-          where: { id: { in: createdShopIds } },
-          select: {
-            id: true,
-            sellerId: true,
-            name: true,
-          },
-        });
-
-        for (const shop of sellerShops) {
-          const firstProduct = shopGrouped[shop.id][0];
-          const productTitle = firstProduct?.title || "new item";
-
-          await prisma.notifications.create({
-            data: {
-              title: "🛒 New Order Received",
-              message: `A customer just ordered ${productTitle} from your shop.`,
-              creatorId: userId,
-              receiverId: shop.sellerId,
-              redirect_link: `https://eshop.com/order/${sessionId}`,
-            },
-          });
-        }
-
-        // Create notification for admin
-        await prisma.notifications.create({
-          data: {
-            title: "📦 Platform Order Alert",
-            message: `A new order was placed by ${name}.`,
-            creatorId: userId,
-            receiverId: "admin",
-            redirect_link: `https://eshop.com/order/${sessionId}`,
-          },
-        });
-
-        await redis.del(sessionKey);
-      }
+      await createOrdersFromSession(sessionData, userId, sessionKey, sessionId);
     }
     res.status(200).json({ received: true });
   } catch (error) {
@@ -576,6 +638,67 @@ export const updateDeliveryStatus = async (
       order: updatedOrder,
     });
   } catch (error) {
+    return next(error);
+  }
+};
+
+// confirm QPay payment
+export const confirmQPayPayment = async (
+  req: any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { sessionId, invoiceId } = req.body;
+
+    if (!sessionId || !invoiceId) {
+      return res.status(400).json({
+        error: "sessionId and invoiceId are required",
+      });
+    }
+
+    const sessionKey = `payment-session:${sessionId}`;
+    const sessionData = await redis.get(sessionKey);
+
+    // Idempotent: if session missing, return success but created=false
+    if (!sessionData) {
+      return res.status(200).json({
+        success: true,
+        created: false,
+        reason: "SESSION_MISSING",
+      });
+    }
+
+    const session = JSON.parse(sessionData);
+
+    // Verify user owns this session
+    if (session.userId !== req.user.id) {
+      return res.status(403).json({
+        error: "Unauthorized: session does not belong to this user",
+      });
+    }
+
+    // Check if invoice is paid
+    const qpayClient = getQPayClient();
+    const paymentCheck = await qpayClient.checkInvoicePaid(invoiceId);
+
+    if (!paymentCheck.paid) {
+      return res.status(200).json({
+        success: true,
+        paid: false,
+      });
+    }
+
+    // Payment is paid, create orders
+    await createOrdersFromSession(sessionData, session.userId, sessionKey, sessionId);
+
+    return res.status(200).json({
+      success: true,
+      paid: true,
+      created: true,
+    });
+  } catch (error: any) {
+    console.error("QPay confirm payment error:", error);
     return next(error);
   }
 };

@@ -7,11 +7,17 @@ import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import CheckoutForm from "apps/user-ui/src/shared/components/checkout/checkoutForm";
+import QPayCheckoutForm from "apps/user-ui/src/shared/components/checkout/qpayCheckoutForm";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
+const paymentProvider = process.env.NEXT_PUBLIC_PAYMENT_PROVIDER || "stripe";
+const stripePromise =
+  paymentProvider === "stripe"
+    ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!)
+    : null;
 
 const Page = () => {
   const [clientSecret, setClientSecret] = useState("");
+  const [qpayData, setQpayData] = useState<any>(null);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [coupon, setCoupon] = useState();
   const [loading, setLoading] = useState(true);
@@ -60,7 +66,12 @@ const Page = () => {
           }
         );
 
-        setClientSecret(intentRes.data.clientSecret);
+        if (intentRes.data.provider === "qpay") {
+          setQpayData(intentRes.data.qpay);
+          setClientSecret(intentRes.data.clientSecret); // invoice_id
+        } else {
+          setClientSecret(intentRes.data.clientSecret);
+        }
       } catch (err: any) {
         console.error(err);
         setError("Something went wrong while preparing your payment.");
@@ -109,8 +120,21 @@ const Page = () => {
     );
   }
 
+  if (paymentProvider === "qpay" && qpayData) {
+    return (
+      <QPayCheckoutForm
+        invoiceId={clientSecret}
+        qpayData={qpayData}
+        cartItems={cartItems}
+        coupon={coupon}
+        sessionId={sessionId}
+      />
+    );
+  }
+
   return (
-    clientSecret && (
+    clientSecret &&
+    stripePromise && (
       <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
         <CheckoutForm
           clientSecret={clientSecret}
