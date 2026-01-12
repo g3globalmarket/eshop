@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 
 # Copy workspace files
 COPY pnpm-workspace.yaml ./
@@ -16,6 +16,9 @@ COPY apps/admin-ui/package.json ./apps/admin-ui/
 # Copy shared packages
 COPY packages ./packages
 
+# Copy Prisma schema for postinstall
+COPY prisma ./prisma
+
 # Install dependencies
 RUN pnpm install --filter admin-ui... --frozen-lockfile
 
@@ -24,7 +27,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
@@ -51,6 +54,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # ADD NEXT.JS ENVIRONMENT VARIABLES (BEFORE BUILD)
 # These can be overridden at runtime or build time
+ARG NEXT_PUBLIC_SERVER_URI
+ARG NEXT_PUBLIC_SOCKET_URI
+ARG NEXT_PUBLIC_USER_UI_LINK
 ENV NEXT_PUBLIC_SERVER_URI=${NEXT_PUBLIC_SERVER_URI:-https://nomadnet.shop}
 ENV NEXT_PUBLIC_SOCKET_URI=${NEXT_PUBLIC_SOCKET_URI:-wss://nomadnet.shop/ws-loggers}
 ENV NEXT_PUBLIC_USER_UI_LINK=${NEXT_PUBLIC_USER_UI_LINK:-https://nomadnet.shop}
