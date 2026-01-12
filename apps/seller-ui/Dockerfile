@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 
 # Copy workspace files
 COPY pnpm-workspace.yaml ./
@@ -16,15 +16,18 @@ COPY apps/seller-ui/package.json ./apps/seller-ui/
 # Copy shared packages
 COPY packages ./packages
 
+# Copy prisma folder (needed for postinstall prisma generate)
+COPY prisma ./prisma
+
 # Install dependencies
-RUN pnpm install
+RUN pnpm install --filter seller-ui... --frozen-lockfile
 
 # 2. Build the app
 FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 
 #copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
