@@ -1,0 +1,34 @@
+{
+  "sessionId": "test-qpay-invoice-001",
+  "ttlSec": 600,
+  "sessionData": {
+    "userId": "test-user-123",
+    "cart": [
+      {
+        "productId": "507f1f77bcf86cd799439011",
+        "name": "Test Product",
+        "quantity": 1,
+        "price": 50000,
+        "selectedOptions": []
+      }
+    ],
+    "sellers": [
+      {
+        "sellerId": "507f1f77bcf86cd799439012",
+        "items": [
+          {
+            "productId": "507f1f77bcf86cd799439011",
+            "shopId": "507f1f77bcf86cd799439013",
+            "quantity": 1,
+            "price": 50000,
+            "selectedOptions": []
+          }
+        ]
+      }
+    ],
+    "totalAmount": 50000,
+    "shippingAddressId": "507f1f77bcf86cd799439014",
+    "coupon": null
+  }
+}
+

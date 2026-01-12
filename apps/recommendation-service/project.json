@@ -41,7 +41,8 @@
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "recommendation-service:build"
+        "buildTarget": "recommendation-service:build",
+        "runBuildTargetDependencies": false
       },
       "configurations": {
         "development": {
@@ -50,6 +51,13 @@
         "production": {
           "buildTarget": "recommendation-service:build:production"
         }
+      }
+    },
+    "prisma-generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate",
+        "cwd": "{projectRoot}/../.."
       }
     }
   },

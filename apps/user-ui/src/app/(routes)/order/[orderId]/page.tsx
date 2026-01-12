@@ -1,12 +1,15 @@
 "use client";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import { Loader2 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import EbarimtReceipt from "../../../../shared/components/order/EbarimtReceipt";
 
 const Page = () => {
   const params = useParams();
+  const searchParams = useSearchParams();
   const orderId = params.orderId as string;
+  const qpaySessionId = searchParams.get("qpaySessionId");
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -178,6 +181,13 @@ const Page = () => {
             {order.shippingAddress.zip}
           </p>
           <p>{order.shippingAddress.country}</p>
+        </div>
+      )}
+
+      {/* Ebarimt Receipt (Mongolian Tax Receipt) - QPay only */}
+      {qpaySessionId && (
+        <div className="mb-6">
+          <EbarimtReceipt sessionId={qpaySessionId} autoFetch={true} />
         </div>
       )}
 

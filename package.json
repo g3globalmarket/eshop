@@ -2,6 +2,7 @@
   "name": "@./source",
   "version": "0.0.0",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "npx nx run-many --target=serve --all --maxParallel=10",
     "user-ui": "npx nx run-many --target=dev --all --projects=user-ui",
     "seller-ui": "npx nx run-many --target=dev --all --projects=seller-ui",
@@ -26,9 +27,10 @@
   "private": true,
   "dependencies": {
     "@prisma/client": "^6.7.0",
+    "dotenv": "^16.6.1",
     "prisma": "^6.7.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
     "tsconfig-paths": "^4.2.0",
     "tslib": "^2.6.0"
   },

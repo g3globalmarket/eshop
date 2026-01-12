@@ -1,3 +1,7 @@
+// Load environment variables BEFORE any other imports
+// This must be the FIRST import to ensure env vars are available
+import "@packages/libs/env-loader";
+
 import express, { Router, Request, Response } from "express";
 import cors from "cors";
 import proxy from "express-http-proxy";
@@ -5,6 +9,10 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import initializeSiteConfig from "./libs/initializeSiteConfig";
+import { register } from "prom-client";
+
+// Import QPay metrics to ensure they're registered
+import "./metrics/qpay.metrics";
 
 const app = express();
 
@@ -33,6 +41,10 @@ app.use(
 
 // Use appropriate logging for production
 app.use(morgan(isProduction ? "combined" : "dev"));
+
+// Raw body parser for QPay webhook callback (must be before global JSON parser)
+// This preserves raw request body bytes for HMAC signature verification
+app.use("/payments/qpay/callback", express.raw({ type: "*/*", limit: "50mb" }));
 
 app.use(express.json({ limit: "50mb" })); // Reduced from 100mb for security
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -84,6 +96,12 @@ simpleRouter.post("/notify", (req: Request, res: Response) => {
 app.use("/payments/simple", simpleRouter);
 
 // ───────────────────────────────────────────────────────────────────────────────
+// QPay callbacks router
+// ───────────────────────────────────────────────────────────────────────────────
+import qpayRouter from "./(routes)/qpay";
+app.use("/payments/qpay", qpayRouter);
+
+// ───────────────────────────────────────────────────────────────────────────────
 // Health check endpoint (gateway-level)
 // ───────────────────────────────────────────────────────────────────────────────
 app.get("/gateway-health", (_req, res) => {
@@ -95,9 +113,17 @@ app.get("/gateway-health", (_req, res) => {
 });
 
 // Service URLs configuration
+// SERVICE_URL_MODE can override isProduction behavior:
+// - "local" => use localhost (for local dev even with NODE_ENV=production)
+// - "docker" => use Docker service names
+// - unset => use isProduction logic (backward compatible)
+const serviceUrlMode = process.env.SERVICE_URL_MODE?.toLowerCase();
+const useDockerServiceNames =
+  serviceUrlMode === "docker" || (serviceUrlMode !== "local" && isProduction);
+
 const getServiceUrl = (serviceName: string, port: number) => {
-  if (isProduction) {
-    // Use Docker service names in production
+  if (useDockerServiceNames) {
+    // Use Docker service names
     return `http://${serviceName}:${port}`;
   } else {
     // Use localhost for development
@@ -176,6 +202,18 @@ app.use(
   createProxyMiddleware(getServiceUrl("auth-service", 6001), "auth-service")
 );
 
+// Prometheus metrics endpoint
+app.get("/metrics", async (req, res) => {
+  try {
+    res.set("Content-Type", register.contentType);
+    const metrics = await register.metrics();
+    res.end(metrics);
+  } catch (error) {
+    console.error("[Metrics] Error generating metrics:", error);
+    res.status(500).end("Error generating metrics");
+  }
+});
+
 // Global error handler
 app.use(
   (
@@ -209,6 +247,12 @@ const host = isProduction ? "0.0.0.0" : "localhost";
 const server = app.listen(Number(port), host, () => {
   console.log(`🚀 API Gateway listening at http://${host}:${port}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+  const serviceModeDisplay = serviceUrlMode
+    ? `${serviceUrlMode} (explicit)`
+    : useDockerServiceNames
+    ? "docker (auto)"
+    : "local (auto)";
+  console.log(`🔗 Service URL Mode: ${serviceModeDisplay}`);
   console.log(`🔗 CORS Origins: ${JSON.stringify(allowedOrigins)}`);
 
   try {

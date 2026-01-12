@@ -1,0 +1,144 @@
+groups:
+  - name: qpay
+    interval: 30s
+    rules:
+      # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      # API Gateway Alerts
+      # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+      - alert: QPayGatewayHighErrorRate
+        expr: |
+          (
+            sum(rate(qpay_gateway_request_total{result="error"}[5m]))
+            /
+            clamp_min(sum(rate(qpay_gateway_request_total[5m])), 1e-9)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: api-gateway
+          team: payments
+        annotations:
+          summary: "QPay gateway error rate > 5%"
+          description: "{{ $value | humanizePercentage }} of QPay gateway requests are failing. Route: {{ $labels.route }}"
+          runbook: "Check api-gateway logs and upstream order-service health. Verify network connectivity and order-service /metrics endpoint."
+
+      - alert: QPayGatewayHighTimeoutRate
+        expr: |
+          (
+            sum(rate(qpay_gateway_request_total{upstream_status="timeout"}[5m]))
+            /
+            clamp_min(sum(rate(qpay_gateway_request_total[5m])), 1e-9)
+          ) > 0.02
+        for: 5m
+        labels:
+          severity: critical
+          component: api-gateway
+          team: payments
+        annotations:
+          summary: "QPay gateway timeout rate > 2%"
+          description: "{{ $value | humanizePercentage }} of QPay requests are timing out. Route: {{ $labels.route }}"
+          runbook: "Check network latency, order-service response time, and gateway timeout configuration (currently 10-15s). Verify order-service is running and not overloaded."
+
+      # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      # Webhook Processing Alerts
+      # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+      - alert: QPayWebhookHighUnexpectedError
+        expr: |
+          (
+            sum(rate(qpay_webhook_outcome_total{outcome="ERROR"}[5m]))
+            /
+            clamp_min(sum(rate(qpay_webhook_outcome_total[5m])), 1e-9)
+          ) > 0.02
+        for: 5m
+        labels:
+          severity: critical
+          component: order-service
+          team: payments
+        annotations:
+          summary: "QPay webhook unexpected ERROR outcome > 2%"
+          description: "{{ $value | humanizePercentage }} of webhooks are failing with ERROR outcome. This indicates unexpected exceptions during webhook processing."
+          runbook: "Inspect order-service webhook logs. Verify MongoDB/Redis connectivity. Check for recent code deployments. Review error stack traces in logs. Source: {{ $labels.source }}"
+
+      - alert: QPayWebhookSessionMissingSpike
+        expr: sum(rate(qpay_webhook_outcome_total{outcome="SESSION_MISSING"}[10m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+          component: order-service
+          team: payments
+        annotations:
+          summary: "QPay webhook SESSION_MISSING observed"
+          description: "Webhooks are arriving but payment sessions are not found in Redis or DB. Rate: {{ $value }} req/sec. Source: {{ $labels.source }}"
+          runbook: "Verify seed-session persistence. Check Redis TTL (should be 30min+). Verify DB fallback logic. Check if QPay webhooks are arriving late. Review QPayPaymentSession table for missing invoiceIds."
+
+      # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      # Payment Check API Alerts
+      # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+      - alert: QPayPaymentCheckHighLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(qpay_payment_check_duration_ms_bucket{result="ok"}[10m])) by (le)
+          ) > 2000
+        for: 10m
+        labels:
+          severity: warning
+          component: order-service
+          team: payments
+        annotations:
+          summary: "QPay payment/check p95 latency > 2000ms"
+          description: "QPay /v2/payment/check API p95 latency is {{ $value }}ms. This may delay webhook processing and status polling."
+          runbook: "Check QPay API status page. Verify token caching (Redis hit rate). Check network latency to QPay servers. Review request retry behavior. Consider increasing timeout if QPay is consistently slow."
+
+      # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      # Additional Alerts (Optional but Recommended)
+      # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+      - alert: QPayWebhookSuccessRateLow
+        expr: |
+          (
+            sum(rate(qpay_webhook_outcome_total{outcome="ORDER_CREATED"}[10m]))
+            /
+            clamp_min(sum(rate(qpay_webhook_outcome_total[10m])), 1e-9)
+          ) < 0.80
+        for: 10m
+        labels:
+          severity: warning
+          component: order-service
+          team: payments
+        annotations:
+          summary: "QPay webhook success rate < 80%"
+          description: "Only {{ $value | humanizePercentage }} of webhooks are creating orders. Check for high NOT_PAID, AMOUNT_MISMATCH, or ERROR rates."
+          runbook: "Review qpay_webhook_outcome_total metrics by outcome. Check QPay payment verification logic. Verify USD_TO_MNT_RATE is correct."
+
+      - alert: QPayPaymentCheckHighErrorRate
+        expr: |
+          (
+            sum(rate(qpay_payment_check_total{result="error"}[10m]))
+            /
+            clamp_min(sum(rate(qpay_payment_check_total[10m])), 1e-9)
+          ) > 0.10
+        for: 10m
+        labels:
+          severity: warning
+          component: order-service
+          team: payments
+        annotations:
+          summary: "QPay payment/check API error rate > 10%"
+          description: "{{ $value | humanizePercentage }} of payment check API calls are failing. HTTP status: {{ $labels.http_status }}"
+          runbook: "Check QPay API status. Verify authentication token is valid. Check for 401 (auth), 500 (QPay error), or timeout. Review QPAY_CLIENT_ID/SECRET env vars."
+
+      - alert: QPayGatewayNoTraffic
+        expr: sum(rate(qpay_gateway_request_total[30m])) == 0
+        for: 30m
+        labels:
+          severity: info
+          component: api-gateway
+          team: payments
+        annotations:
+          summary: "No QPay gateway traffic in 30 minutes"
+          description: "QPay gateway has received zero requests on route {{ $labels.route }} for 30 minutes. This may be normal during off-hours."
+          runbook: "Verify if this is expected. Check if frontend is using QPay. Review user traffic patterns."

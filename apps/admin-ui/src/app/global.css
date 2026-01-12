@@ -1,6 +1,9 @@
+/* Tailwind CSS directives - processed by PostCSS */
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
 
     html {
       -webkit-text-size-adjust: 100%;

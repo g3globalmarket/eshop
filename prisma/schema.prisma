@@ -305,3 +305,65 @@ model message {
 
   @@unique([conversationId, senderId, content, createdAt])
 }
+
+model QPayWebhookEvent {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceId     String   @unique
+  status       String
+  rawPayload   Json
+  processedAt  DateTime @default(now())
+  forwardStatus String  @default("pending") // pending, forwarded, failed, retry_pending
+  lastError    String?
+  retryCount    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([invoiceId, status])
+  @@index([forwardStatus])
+}
+
+model QPayProcessedInvoice {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceId   String   @unique
+  sessionId   String?
+  status      String
+  orderIds    String[]
+  processedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sessionId])
+}
+
+model QPayPaymentSession {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId     String    @unique
+  provider      String    @default("qpay")
+  invoiceId     String?   @unique
+  userId        String
+  amount        Float
+  currency      String    @default("MNT")
+  payload       Json      // Full sessionData (cart, sellers, totalAmount, etc.)
+  status        String    @default("PENDING") // PENDING, PAID, PROCESSED, FAILED, CANCELLED, EXPIRED
+  callbackToken String?   // Random token for public webhook verification
+  expiresAt     DateTime?
+  lastCheckAt   DateTime?
+  cancelledAt   DateTime? // When user manually cancelled the payment
+  
+  // Ebarimt (Mongolian e-receipt) fields
+  paymentId           String?   @unique // QPay payment_id from /v2/payment/check
+  ebarimtStatus       String?   // REGISTERED | ERROR | SKIPPED
+  ebarimtReceiptId    String?   // ebarimt_receipt_id from QPay
+  ebarimtQrData       String?   // ebarimt_qr_data (QR code for receipt)
+  ebarimtRaw          Json?     // Full response from QPay (optional, for audit)
+  ebarimtLastError    String?   // Last error message if creation failed
+  ebarimtCreatedAt    DateTime? // When Ebarimt was successfully created
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([callbackToken])
+  @@index([ebarimtStatus])
+}

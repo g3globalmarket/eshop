@@ -1,79 +1,153 @@
 "use client";
-import { CheckCircle, Loader2, XCircle } from "lucide-react";
+import {
+  CheckCircle,
+  Loader2,
+  XCircle,
+  Copy,
+  ExternalLink,
+  Ban,
+} from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
-import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import { useRouter } from "next/navigation";
+import {
+  getQPayPaymentStatus,
+  formatQRImage,
+  cancelQPayPayment,
+  type QPayPaymentStatus,
+} from "../../../utils/qpay-api";
 
 const QPayCheckoutForm = ({
-  invoiceId,
-  qpayData,
+  initialSessionId,
+  invoiceData,
   cartItems,
   coupon,
-  sessionId,
 }: {
-  invoiceId: string;
-  qpayData: {
-    invoice_id: string;
-    qr_text: string;
-    qr_image: string;
-    urls: Array<{
+  initialSessionId: string;
+  invoiceData: {
+    invoiceId: string;
+    qrText: string;
+    qrImage: string;
+    shortUrl: string;
+    deeplinks?: Array<{
       name: string;
-      description: string;
       link: string;
-      logo: string;
+      logo?: string;
+      description?: string;
     }>;
   };
   cartItems: any[];
   coupon: any;
-  sessionId: string | null;
 }) => {
   const router = useRouter();
-  const [status, setStatus] = useState<"pending" | "success" | "failed">("pending");
+  const [status, setStatus] = useState<QPayPaymentStatus>("PENDING");
+  const [statusText, setStatusText] = useState("Waiting for payment...");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [polling, setPolling] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inFlightRef = useRef(false);
-  const maxPollTime = 180000; // 3 minutes
+  const maxPollTime = 300000; // 5 minutes
   const pollStartTime = useRef<number>(Date.now());
+  const sessionIdRef = useRef(initialSessionId);
 
   const total = cartItems.reduce(
     (sum, item) => sum + item.sale_price * item.quantity,
     0
   );
 
-  // Format QR image if needed
-  const qrImageSrc =
-    qpayData.qr_image.startsWith("data:") || qpayData.qr_image.startsWith("http")
-      ? qpayData.qr_image
-      : `data:image/png;base64,${qpayData.qr_image}`;
+  const qrImageSrc = formatQRImage(invoiceData.qrImage);
 
-  // Poll for payment confirmation
+  // Update status text based on current status
   useEffect(() => {
-    if (!polling || status !== "pending") return;
+    switch (status) {
+      case "PENDING":
+        setStatusText("Waiting for payment...");
+        break;
+      case "PAID":
+        setStatusText("Payment received. Processing order...");
+        break;
+      case "PROCESSED":
+        setStatusText("Order created! Redirecting...");
+        break;
+      case "FAILED":
+        setStatusText("Payment failed");
+        break;
+      case "CANCELLED":
+        setStatusText("Payment cancelled");
+        break;
+      case "EXPIRED":
+        setStatusText("Session expired");
+        break;
+      case "SESSION_NOT_FOUND":
+        setStatusText("Session not found");
+        break;
+    }
+  }, [status]);
 
-    // Stop helper function
-    const stop = (nextStatus: "success" | "failed", msg?: string) => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-      setPolling(false);
-      if (msg) {
-        setErrorMsg(msg);
-      }
-      setStatus(nextStatus);
-    };
+  // Handle cancel payment
+  const handleCancelPayment = async () => {
+    const sessionId = sessionIdRef.current;
 
-    // Check if sessionId is missing
-    if (!sessionId) {
-      stop("failed", "Missing session. Please try again.");
+    if (!sessionId || cancelling) {
       return;
     }
 
-    // Reset timeout timer when polling starts/restarts
+    // Confirm cancellation
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this payment? You can start a new payment from your cart."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setCancelling(true);
+
+    try {
+      await cancelQPayPayment(sessionId);
+
+      // Stop polling
+      setPolling(false);
+      setStatus("CANCELLED");
+
+      console.info("[QPay] Payment cancelled by user", { sessionId });
+    } catch (error: any) {
+      console.error("[QPay] Failed to cancel payment:", error);
+      setErrorMsg(error.message || "Failed to cancel payment");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  // Copy QR text to clipboard
+  const handleCopyQR = async () => {
+    try {
+      await navigator.clipboard.writeText(invoiceData.qrText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
+    }
+  };
+
+  // Poll for payment status
+  useEffect(() => {
+    if (!polling || status === "PROCESSED" || status === "FAILED") return;
+
+    const sessionId = sessionIdRef.current;
+
+    if (!sessionId) {
+      setStatus("FAILED");
+      setErrorMsg("Missing session ID. Please try again.");
+      setPolling(false);
+      return;
+    }
+
+    // Reset timeout timer when polling starts
     pollStartTime.current = Date.now();
 
-    const checkPayment = async () => {
+    const checkPaymentStatus = async () => {
       // Prevent overlapping requests
       if (inFlightRef.current) {
         return;
@@ -81,44 +155,68 @@ const QPayCheckoutForm = ({
 
       // Stop polling if max time exceeded
       if (Date.now() - pollStartTime.current > maxPollTime) {
-        stop("failed", "Payment timeout. Please try again.");
+        setStatus("FAILED");
+        setErrorMsg("Payment timeout. Please try again.");
+        setPolling(false);
         return;
       }
 
       inFlightRef.current = true;
       try {
-        const response = await axiosInstance.post("/order/api/qpay/confirm", {
-          sessionId,
-          invoiceId,
-        });
+        const result = await getQPayPaymentStatus(sessionId);
 
-        if (response.data.success && response.data.paid && response.data.created) {
-          stop("success");
-          // Redirect to success page after short delay
-          setTimeout(() => {
-            router.push(`/payment-success?sessionId=${sessionId}`);
-          }, 1500);
-        } else if (response.data.success && response.data.paid && !response.data.created) {
-          // Already created (idempotent response)
-          stop("success");
-          setTimeout(() => {
-            router.push(`/payment-success?sessionId=${sessionId}`);
-          }, 1500);
+        if (!result.ok && result.error) {
+          console.warn("[QPay] Status check warning:", result.error);
+          // Continue polling on transient errors
+          return;
         }
-        // If not paid yet, continue polling
+
+        // Update status
+        setStatus(result.status);
+
+        // Handle different statuses
+        if (
+          result.status === "PROCESSED" &&
+          result.orderIds &&
+          result.orderIds.length > 0
+        ) {
+          // Payment complete, order created
+          setPolling(false);
+          setTimeout(() => {
+            // Include sessionId in URL for Ebarimt display
+            router.push(
+              `/order/${result.orderIds![0]}?qpaySessionId=${encodeURIComponent(
+                sessionId
+              )}`
+            );
+          }, 1500);
+        } else if (result.status === "SESSION_NOT_FOUND") {
+          setPolling(false);
+          setErrorMsg("Session expired or not found. Please try again.");
+        } else if (result.status === "FAILED") {
+          setPolling(false);
+          setErrorMsg(result.error || "Payment failed");
+        } else if (result.status === "CANCELLED") {
+          setPolling(false);
+          setErrorMsg("Payment was cancelled");
+        } else if (result.status === "EXPIRED") {
+          setPolling(false);
+          setErrorMsg("Payment session expired. Please start a new payment.");
+        }
+        // If PENDING or PAID, continue polling
       } catch (error: any) {
-        console.error("Payment check error:", error);
-        // Continue polling on error (might be transient)
+        console.error("[QPay] Payment check error:", error);
+        // Continue polling on error (might be transient network issue)
       } finally {
         inFlightRef.current = false;
       }
     };
 
     // Initial check
-    checkPayment();
+    checkPaymentStatus();
 
-    // Poll every 2 seconds
-    pollIntervalRef.current = setInterval(checkPayment, 2000);
+    // Poll every 3 seconds
+    pollIntervalRef.current = setInterval(checkPaymentStatus, 3000);
 
     return () => {
       if (pollIntervalRef.current) {
@@ -126,7 +224,7 @@ const QPayCheckoutForm = ({
         pollIntervalRef.current = null;
       }
     };
-  }, [polling, status, sessionId, invoiceId, router]);
+  }, [polling, status, router]);
 
   return (
     <div className="flex justify-center items-center min-h-[80vh] px-4 my-10">
@@ -159,10 +257,11 @@ const QPayCheckoutForm = ({
           </div>
         </div>
 
-        {/* QR Code */}
-        {status === "pending" && (
+        {/* QR Code and Payment Options */}
+        {(status === "PENDING" || status === "PAID") && (
           <div className="flex flex-col items-center space-y-4">
-            <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+            {/* QR Code */}
+            <div className="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
               <img
                 src={qrImageSrc}
                 alt="QPay QR Code"
@@ -173,54 +272,113 @@ const QPayCheckoutForm = ({
                 }}
               />
             </div>
+
+            {/* QR Text Copy Button */}
+            <button
+              onClick={handleCopyQR}
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 transition"
+            >
+              <Copy className="w-4 h-4" />
+              {copied ? "Copied!" : "Copy QR Text"}
+            </button>
+
             <p className="text-sm text-gray-600 text-center">
-              Scan the QR code with your QPay app to complete payment
+              Scan the QR code with your banking app to complete payment
             </p>
 
+            {/* Short URL Link */}
+            {invoiceData.shortUrl && (
+              <a
+                href={invoiceData.shortUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 transition"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open in browser
+              </a>
+            )}
+
             {/* Deep Links */}
-            {qpayData.urls && qpayData.urls.length > 0 && (
+            {invoiceData.deeplinks && invoiceData.deeplinks.length > 0 && (
               <div className="w-full space-y-2">
-                <p className="text-sm font-semibold text-gray-700">Or use:</p>
-                {qpayData.urls.map((url, idx) => (
-                  <a
-                    key={idx}
-                    href={url.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition text-center text-sm font-medium"
-                  >
-                    {url.name}
-                  </a>
-                ))}
+                <p className="text-sm font-semibold text-gray-700 text-center">
+                  Or open with app:
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {invoiceData.deeplinks.map((deeplink, idx) => (
+                    <a
+                      key={idx}
+                      href={deeplink.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition text-sm font-medium"
+                      title={deeplink.description || deeplink.name}
+                    >
+                      {deeplink.logo && (
+                        <img
+                          src={deeplink.logo}
+                          alt={deeplink.name}
+                          className="w-5 h-5 object-contain"
+                        />
+                      )}
+                      <span className="truncate">{deeplink.name}</span>
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
 
+            {/* Status Indicator */}
             {polling && (
               <div className="flex items-center gap-2 text-blue-600 text-sm">
                 <Loader2 className="animate-spin w-4 h-4" />
-                <span>Waiting for payment confirmation...</span>
+                <span>{statusText}</span>
               </div>
+            )}
+
+            {/* Cancel Button */}
+            {(status === "PENDING" || status === "PAID") && polling && (
+              <button
+                onClick={handleCancelPayment}
+                disabled={cancelling}
+                className="w-full mt-4 px-4 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Ban className="w-4 h-4" />
+                {cancelling ? "Cancelling..." : "Cancel Payment"}
+              </button>
             )}
           </div>
         )}
 
-        {/* Success State */}
-        {status === "success" && (
+        {/* Processing/Success State */}
+        {status === "PROCESSED" && (
           <div className="flex flex-col items-center gap-4">
             <CheckCircle className="w-16 h-16 text-green-500" />
-            <p className="text-lg font-semibold text-green-600">
-              Payment successful!
-            </p>
-            <p className="text-sm text-gray-600">Redirecting to confirmation...</p>
+            <p className="text-lg font-semibold text-green-600">{statusText}</p>
+            <p className="text-sm text-gray-600">Taking you to your order...</p>
           </div>
         )}
 
-        {/* Error State */}
-        {status === "failed" && (
+        {/* Error/Cancelled/Expired State */}
+        {(status === "FAILED" ||
+          status === "SESSION_NOT_FOUND" ||
+          status === "CANCELLED" ||
+          status === "EXPIRED") && (
           <div className="flex flex-col items-center gap-4">
             <XCircle className="w-16 h-16 text-red-500" />
-            <p className="text-lg font-semibold text-red-600">Payment failed</p>
+            <p className="text-lg font-semibold text-red-600">{statusText}</p>
             {errorMsg && <p className="text-sm text-gray-600">{errorMsg}</p>}
+            {status === "CANCELLED" && (
+              <p className="text-sm text-gray-600 text-center">
+                You can start a new payment from your cart
+              </p>
+            )}
+            {status === "EXPIRED" && (
+              <p className="text-sm text-gray-600 text-center">
+                Payment sessions expire after 30 minutes of inactivity
+              </p>
+            )}
             <button
               onClick={() => router.push("/cart")}
               className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
@@ -235,4 +393,3 @@ const QPayCheckoutForm = ({
 };
 
 export default QPayCheckoutForm;
-

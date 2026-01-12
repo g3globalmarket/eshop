@@ -8,6 +8,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import CheckoutForm from "apps/user-ui/src/shared/components/checkout/checkoutForm";
 import QPayCheckoutForm from "apps/user-ui/src/shared/components/checkout/qpayCheckoutForm";
+import EbarimtForm, {
+  type EbarimtFormData,
+} from "apps/user-ui/src/shared/components/checkout/EbarimtForm";
+import { startQPayPayment } from "../../../utils/qpay-api";
+
+export const dynamic = 'force-dynamic';
 
 const paymentProvider = process.env.NEXT_PUBLIC_PAYMENT_PROVIDER || "stripe";
 const stripePromise =
@@ -17,18 +23,35 @@ const stripePromise =
 
 const Page = () => {
   const [clientSecret, setClientSecret] = useState("");
-  const [qpayData, setQpayData] = useState<any>(null);
+  const [qpaySessionId, setQpaySessionId] = useState<string | null>(null);
+  const [qpayInvoice, setQpayInvoice] = useState<any>(null);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [coupon, setCoupon] = useState();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionData, setSessionData] = useState<any>(null); // Store session data for QPay
+  const [showEbarimtForm, setShowEbarimtForm] = useState(false); // Show Ebarimt form before payment
+  const [creatingPayment, setCreatingPayment] = useState(false); // Loading state for payment creation
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const sessionId = searchParams.get("sessionId");
+  // Support both old sessionId (Stripe/old flow) and new qpaySessionId (QPay new flow)
+  const urlSessionId = searchParams.get("sessionId");
+  const urlQpaySessionId = searchParams.get("qpaySessionId");
+  const urlEbarimtEnabled = searchParams.get("ebarimtEnabled") === "1";
 
   useEffect(() => {
-    const fetchSessionAndClientSecret = async () => {
+    const initializePayment = async () => {
+      // If qpaySessionId is in URL, we're resuming a QPay payment
+      if (urlQpaySessionId) {
+        setQpaySessionId(urlQpaySessionId);
+        setLoading(false);
+        return;
+      }
+
+      // Otherwise, fetch session and create payment intent
+      const sessionId = urlSessionId;
+
       if (!sessionId) {
         setError("Invalid session. Please try again.");
         setLoading(false);
@@ -53,35 +76,98 @@ const Page = () => {
 
         setCartItems(cart);
         setCoupon(coupon);
-        const sellerStripeAccountId = sellers[0].stripeAccountOd;
 
-        const intentRes = await axiosInstance.post(
-          "/order/api/create-payment-intent",
-          {
-            amount: coupon?.discountAmount
+        // Handle QPay payment provider
+        if (paymentProvider === "qpay") {
+          // Store session data for QPay (will be used after Ebarimt form)
+          setSessionData({
+            cart,
+            sellers: sellers.map((s: any) => s.id || s.shopId || s),
+            totalAmount: coupon?.discountAmount
               ? totalAmount - coupon?.discountAmount
               : totalAmount,
-            sellerStripeAccountId,
-            sessionId,
-          }
-        );
+            shippingAddressId: verifyRes.data.session.shippingAddressId || null,
+            coupon: coupon || null,
+          });
 
-        if (intentRes.data.provider === "qpay") {
-          setQpayData(intentRes.data.qpay);
-          setClientSecret(intentRes.data.clientSecret); // invoice_id
+          // Show Ebarimt form before starting payment
+          setShowEbarimtForm(true);
+          setLoading(false);
         } else {
+          // Stripe flow
+          const sellerStripeAccountId = sellers[0].stripeAccountOd;
+          const intentRes = await axiosInstance.post(
+            "/order/api/create-payment-intent",
+            {
+              amount: coupon?.discountAmount
+                ? totalAmount - coupon?.discountAmount
+                : totalAmount,
+              sellerStripeAccountId,
+              sessionId,
+            }
+          );
+
           setClientSecret(intentRes.data.clientSecret);
+          setLoading(false);
         }
       } catch (err: any) {
-        console.error(err);
-        setError("Something went wrong while preparing your payment.");
-      } finally {
+        console.error("[Checkout] Error:", err);
+        setError(
+          err.message || "Something went wrong while preparing your payment."
+        );
         setLoading(false);
       }
     };
 
-    fetchSessionAndClientSecret();
-  }, [sessionId]);
+    initializePayment();
+  }, [urlSessionId, urlQpaySessionId]);
+
+  // Handle Ebarimt form submission (QPay only)
+  const handleEbarimtSubmit = async (ebarimtData: EbarimtFormData | null) => {
+    if (!sessionData) {
+      setError("Session data missing. Please try again.");
+      return;
+    }
+
+    setCreatingPayment(true);
+    setError(null);
+
+    try {
+      // Build payload with optional ebarimt data
+      const payload: any = {
+        ...sessionData,
+      };
+
+      if (ebarimtData) {
+        payload.ebarimt = {
+          receiverType: ebarimtData.receiverType,
+          receiver: ebarimtData.receiver || undefined, // Don't send empty string
+          districtCode: ebarimtData.districtCode,
+          classificationCode: ebarimtData.classificationCode,
+        };
+      }
+
+      // Create QPay payment session + invoice
+      const qpayResponse = await startQPayPayment(payload);
+
+      setQpaySessionId(qpayResponse.sessionId);
+      setQpayInvoice(qpayResponse.invoice);
+      setShowEbarimtForm(false);
+
+      // Update URL with qpaySessionId and ebarimtEnabled flag for refresh resilience
+      const url = new URL(window.location.href);
+      url.searchParams.set("qpaySessionId", qpayResponse.sessionId);
+      if (ebarimtData) {
+        url.searchParams.set("ebarimtEnabled", "1");
+      }
+      window.history.replaceState({}, "", url.toString());
+    } catch (err: any) {
+      console.error("[Checkout] QPay payment creation error:", err);
+      setError(err.message || "Failed to create payment. Please try again.");
+    } finally {
+      setCreatingPayment(false);
+    }
+  };
 
   const appearance: Appearance = {
     theme: "stripe",
@@ -120,18 +206,45 @@ const Page = () => {
     );
   }
 
-  if (paymentProvider === "qpay" && qpayData) {
-    return (
-      <QPayCheckoutForm
-        invoiceId={clientSecret}
-        qpayData={qpayData}
-        cartItems={cartItems}
-        coupon={coupon}
-        sessionId={sessionId}
-      />
-    );
+  // QPay flow
+  if (paymentProvider === "qpay") {
+    // Show Ebarimt form before payment creation
+    if (showEbarimtForm) {
+      return (
+        <div className="flex justify-center items-center min-h-[80vh] px-4 my-10">
+          <EbarimtForm
+            onSubmit={handleEbarimtSubmit}
+            isLoading={creatingPayment}
+          />
+        </div>
+      );
+    }
+
+    // Show payment QR code after session creation
+    if (qpaySessionId) {
+      // If we have invoice data, show it; otherwise component will load from sessionId
+      if (qpayInvoice) {
+        return (
+          <QPayCheckoutForm
+            initialSessionId={qpaySessionId}
+            invoiceData={qpayInvoice}
+            cartItems={cartItems}
+            coupon={coupon}
+          />
+        );
+      }
+
+      // If resuming from URL (no invoice data), fetch it
+      // For now, show loading (component will handle polling)
+      return (
+        <div className="flex justify-center items-center min-h-[70vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent" />
+        </div>
+      );
+    }
   }
 
+  // Stripe flow
   return (
     clientSecret &&
     stripePromise && (
@@ -140,7 +253,7 @@ const Page = () => {
           clientSecret={clientSecret}
           cartItems={cartItems}
           coupon={coupon}
-          sessionId={sessionId}
+          sessionId={urlSessionId}
         />
       </Elements>
     )
