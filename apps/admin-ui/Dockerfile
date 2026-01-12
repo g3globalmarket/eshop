@@ -62,7 +62,7 @@ ENV NEXT_PUBLIC_SOCKET_URI=${NEXT_PUBLIC_SOCKET_URI:-wss://nomadnet.shop/ws-logg
 ENV NEXT_PUBLIC_USER_UI_LINK=${NEXT_PUBLIC_USER_UI_LINK:-https://nomadnet.shop}
 
 # Generate Prisma client before building
-RUN npx prisma generate
+RUN npx prisma@6.19.1 generate --schema=prisma/schema.prisma
 
 # Use Next.js build directly instead of Nx
 WORKDIR /app/apps/admin-ui

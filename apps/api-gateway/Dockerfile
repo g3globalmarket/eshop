@@ -24,7 +24,7 @@ RUN pnpm deploy --filter "./apps/api-gateway" /out
 WORKDIR /out
 # используем prisma из корня, указываем явный путь к схеме
 RUN node /repo/node_modules/.bin/prisma generate --schema=/repo/prisma/schema.prisma || \
-    npx prisma generate --schema=/repo/prisma/schema.prisma
+    npx prisma@6.19.1 generate --schema=/repo/prisma/schema.prisma
 
 # ---- Runtime ----
 FROM node:20-alpine AS runner
@@ -36,7 +36,7 @@ EXPOSE 8080
 # 5) Копируем готовый артефакт
 COPY --from=builder /out/ ./
 COPY prisma ./prisma
-RUN node ./node_modules/.bin/prisma generate --schema=/app/prisma/schema.prisma || npx prisma generate --schema=/app/prisma/schema.prisma
+RUN node ./node_modules/.bin/prisma generate --schema=/app/prisma/schema.prisma || npx prisma@6.19.1 generate --schema=/app/prisma/schema.prisma
 
 # 6) Старт
 CMD ["node","dist/main.js"]

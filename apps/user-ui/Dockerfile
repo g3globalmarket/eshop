@@ -59,7 +59,7 @@ ENV NEXT_PUBLIC_SELLER_SERVER_URI=https://sellers.nomadnet.shop
 ENV NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_51Ox7STKfWK4AoG4YmNVlSSToDlYzvr8TGe2d36vzYt5iYQ4JViRC976MOF9A2uXU2wzJt4T2IN5NXscnmpGlXlAz00whmGYvmP
 
 # Generate Prisma client before building
-RUN npx prisma generate
+RUN npx prisma@6.19.1 generate --schema=prisma/schema.prisma
 
 # Use Next.js build directly instead of Nx
 WORKDIR /app/apps/user-ui

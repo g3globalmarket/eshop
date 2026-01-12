@@ -19,7 +19,7 @@ RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
 RUN pnpm install --prod
 
 
-RUN npx prisma generate
+RUN npx prisma@6.19.1 generate --schema=prisma/schema.prisma
 
 COPY apps/chatting-service/dist ./dist
 

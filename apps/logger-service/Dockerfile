@@ -21,7 +21,7 @@ RUN pnpm install --prod
 
 
 # Generate Prisma client
-RUN npx prisma generate
+RUN npx prisma@6.19.1 generate --schema=prisma/schema.prisma
 
 # Copy built application
 COPY apps/logger-service/dist ./dist
