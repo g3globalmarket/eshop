@@ -37,11 +37,10 @@ services:
     ports:
       - "9092:9092"
     environment:
-      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092"
-      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT"
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
@@ -73,9 +72,9 @@ services:
     command: |
       bash -c '
         echo "Creating Kafka topics..."
-        kafka-topics --create --topic user-events --bootstrap-server kafka:9092 --replication-factor 1 --partitions 3
-        kafka-topics --create --topic logs --bootstrap-server kafka:9092 --replication-factor 1 --partitions 3
-        kafka-topics --create --topic chat.new_message --bootstrap-server kafka:9092 --replication-factor 1 --partitions 3
+        kafka-topics --create --topic user-events --bootstrap-server kafka:29092 --replication-factor 1 --partitions 3
+        kafka-topics --create --topic logs --bootstrap-server kafka:29092 --replication-factor 1 --partitions 3
+        kafka-topics --create --topic chat.new_message --bootstrap-server kafka:29092 --replication-factor 1 --partitions 3
         echo "Topics created successfully!"
       '
     restart: "no"
@@ -87,7 +86,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
@@ -110,7 +109,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
@@ -133,7 +132,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
@@ -151,7 +150,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
@@ -169,7 +168,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
@@ -187,7 +186,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
@@ -205,7 +204,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
@@ -224,7 +223,7 @@ services:
     environment:
       - NODE_ENV=production
       - DOCKER_ENV=true
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
@@ -237,7 +236,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
@@ -255,7 +254,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
