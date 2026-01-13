@@ -350,6 +350,8 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
+          timeout: 60s
+          command_timeout: 60m
           script: |
             # Navigate to app directory
             cd /home/ubuntu/eshop
