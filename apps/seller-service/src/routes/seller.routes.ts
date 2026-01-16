@@ -1,6 +1,6 @@
-import isAuthenticated from "@packages/middleware/isAuthenticated";
+import { isAuthenticated } from "@packages/middleware/isAuthenticated";
 import { isSeller } from "@packages/middleware/authorizeRoles";
-import express from "express";
+import express, { Router } from "express";
 import {
   deleteShop,
   editSellerProfile,
@@ -17,7 +17,7 @@ import {
   uploadImage,
 } from "../controllers/seller.controller";
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.delete("/delete", isAuthenticated, deleteShop);
 router.patch("/restore", isAuthenticated, restoreShop);

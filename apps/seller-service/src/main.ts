@@ -7,6 +7,16 @@ import router from "./routes/seller.routes";
 import swaggerUi from "swagger-ui-express";
 const swaggerDocument = require("./swagger-output.json");
 
+// Global error handlers
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('[seller-service] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[seller-service] Uncaught Exception:', error);
+  process.exit(1);
+});
+
 const app = express();
 
 app.use(

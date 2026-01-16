@@ -8,6 +8,9 @@ out-tsc
 # dependencies
 node_modules
 
+.env
+.env.*
+**/*.env
 
 # IDEs and editors
 /.idea
@@ -50,3 +53,8 @@ out
 .env
 .env.local
 eshop-demo-key.pem
+
+# Backup files
+*.bak.*
+*.backup
+ops-backups/

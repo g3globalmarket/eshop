@@ -44,6 +44,9 @@
     },
     {
       "path": "./apps/recommendation-service"
+    },
+    {
+      "path": "./packages/libs/env-loader"
     }
   ]
 }

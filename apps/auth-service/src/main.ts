@@ -6,6 +6,16 @@ import router from "./routes/auth.router";
 import swaggerUi from "swagger-ui-express";
 const swaggerDocument = require("./swagger-output.json");
 
+// Global error handlers
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('[auth-service] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[auth-service] Uncaught Exception:', error);
+  process.exit(1);
+});
+
 const app = express();
 app.use(express.json());
 app.use(cookieParser());

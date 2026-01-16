@@ -4,6 +4,16 @@ import { createWebSocketServer } from "./websocket";
 import { startConsumer } from "./chat-message.consumer";
 import router from "./routes/chat.routes";
 
+// Global error handlers
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('[chatting-service] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[chatting-service] Uncaught Exception:', error);
+  process.exit(1);
+});
+
 const app = express();
 app.use(express.json());
 app.use(cookieParser());

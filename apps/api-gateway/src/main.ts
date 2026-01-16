@@ -2,6 +2,16 @@
 // This must be the FIRST import to ensure env vars are available
 import "@packages/libs/env-loader";
 
+// Global error handlers
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('[api-gateway] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[api-gateway] Uncaught Exception:', error);
+  process.exit(1);
+});
+
 import express, { Router, Request, Response } from "express";
 import cors from "cors";
 import proxy from "express-http-proxy";

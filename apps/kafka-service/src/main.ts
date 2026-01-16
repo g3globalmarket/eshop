@@ -1,6 +1,16 @@
 import { kafka } from "@packages/utils/kafka";
 import { updateUserAnalytics } from "./services/analytics.service";
 
+// Global error handlers
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('[kafka-service] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[kafka-service] Uncaught Exception:', error);
+  process.exit(1);
+});
+
 const consumer = kafka.consumer({ groupId: "user-events-group" });
 
 const eventQueue: any[] = [];

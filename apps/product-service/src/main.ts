@@ -3,6 +3,16 @@ import productRoutes from "./routes/product.routes";
 import cookieParser from "cookie-parser";
 import { errorMiddleware } from "@packages/error-handler/error-middleware";
 
+// Global error handlers
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('[product-service] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[product-service] Uncaught Exception:', error);
+  process.exit(1);
+});
+
 const app: express.Application = express();
 app.use(express.json({ limit: "50mb" })); // Reduced from 100mb for security
 app.use(express.urlencoded({ limit: "50mb", extended: true }));

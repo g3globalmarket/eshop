@@ -3,6 +3,16 @@ import WebSocket from "ws";
 import http from "http";
 import { consumeKafkaMessages } from "./logger-consumer";
 
+// Global error handlers
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('[logger-service] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[logger-service] Uncaught Exception:', error);
+  process.exit(1);
+});
+
 const app = express();
 
 const wsServer = new WebSocket.Server({ noServer: true });

@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../packages/libs/env-loader"
+    },
+    {
       "path": "./tsconfig.app.json"
     }
   ]

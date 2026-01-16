@@ -531,7 +531,10 @@ export const sellerNotifications = async (
       success: true,
       notifications,
     });
-  } catch (error) {}
+  } catch (error) {
+    console.error('[Seller Controller] Error fetching notifications:', error);
+    // Log but don't throw - operation is non-critical
+  }
 };
 
 // mark notification as read

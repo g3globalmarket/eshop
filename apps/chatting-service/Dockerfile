@@ -15,11 +15,10 @@ COPY packages/utils/kafka ./packages/utils/kafka
 
 COPY prisma ./prisma
 
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-RUN pnpm install --prod
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+RUN pnpm install --prod --frozen-lockfile
 
-
-RUN npx prisma@6.19.1 generate --schema=prisma/schema.prisma
+RUN pnpm exec prisma generate --schema=prisma/schema.prisma
 
 COPY apps/chatting-service/dist ./dist
 

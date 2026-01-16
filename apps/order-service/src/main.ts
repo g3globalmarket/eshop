@@ -2,6 +2,16 @@
 // This must be the FIRST import to ensure env vars are available
 import "@packages/libs/env-loader";
 
+// Global error handlers
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('[order-service] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[order-service] Uncaught Exception:', error);
+  process.exit(1);
+});
+
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";

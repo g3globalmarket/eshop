@@ -1,4 +1,4 @@
-import isAuthenticated from "@packages/middleware/isAuthenticated";
+import { isAuthenticated } from "@packages/middleware/isAuthenticated";
 import express, { Router } from "express";
 import {
   createPaymentIntent,

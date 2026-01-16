@@ -1,5 +1,5 @@
-import isAuthenticated from "@packages/middleware/isAuthenticated";
-import express from "express";
+import { isAuthenticated } from "@packages/middleware/isAuthenticated";
+import express, { Router } from "express";
 import {
   fetchMessages,
   fetchSellerMessages,
@@ -9,7 +9,7 @@ import {
 } from "../controllers/chatting.controllers";
 import { isSeller } from "@packages/middleware/authorizeRoles";
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.post("/create-user-conversationGroup", isAuthenticated, newConversation);
 router.get("/get-user-conversations", isAuthenticated, getUserConversations);

@@ -3,6 +3,16 @@ import cookieParser from "cookie-parser";
 import { errorMiddleware } from "@packages/error-handler/error-middleware";
 import router from "./routes/admin.route";
 
+// Global error handlers
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('[admin-service] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[admin-service] Uncaught Exception:', error);
+  process.exit(1);
+});
+
 const app = express();
 app.use(express.json());
 app.use(cookieParser());

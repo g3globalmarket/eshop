@@ -2,7 +2,7 @@ import prisma from "../libs/prisma";
 import { NextFunction, Response } from "express";
 import jwt from "jsonwebtoken";
 
-const isAuthenticated = async (req: any, res: Response, next: NextFunction) => {
+export const isAuthenticated = async (req: any, res: Response, next: NextFunction) => {
   try {
     const token =
       req.cookies["access_token"] ||
@@ -55,4 +55,5 @@ const isAuthenticated = async (req: any, res: Response, next: NextFunction) => {
   }
 };
 
+// Keep default export for backward compatibility
 export default isAuthenticated;

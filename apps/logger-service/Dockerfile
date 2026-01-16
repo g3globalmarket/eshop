@@ -16,12 +16,11 @@ COPY packages/utils/kafka ./packages/utils/kafka
 COPY prisma ./prisma
 
 # Enable pnpm and install dependencies
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-RUN pnpm install --prod
-
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+RUN pnpm install --prod --frozen-lockfile
 
 # Generate Prisma client
-RUN npx prisma@6.19.1 generate --schema=prisma/schema.prisma
+RUN pnpm exec prisma generate --schema=prisma/schema.prisma
 
 # Copy built application
 COPY apps/logger-service/dist ./dist

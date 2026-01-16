@@ -51,7 +51,8 @@ const Page = () => {
               toast.info("Slug was taken. Suggested new one applied.");
             }
           })
-          .catch(() => {
+          .catch((error) => {
+            console.error('Error checking slug:', error);
             toast.error("Error checking slug!");
           })
           .finally(() => {

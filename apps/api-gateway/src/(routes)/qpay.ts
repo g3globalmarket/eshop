@@ -17,7 +17,7 @@ if (process.env.NODE_ENV !== "production") {
   global.__apiGatewayPrisma = prisma;
 }
 
-const router = Router();
+const router: Router = Router();
 
 const QPAY_WEBHOOK_SECRET = process.env.QPAY_WEBHOOK_SECRET;
 const isProduction = process.env.NODE_ENV === "production";
@@ -76,7 +76,10 @@ async function forwardToOrderService(
     }
 
     // Non-2xx response - treat as failed forward
-    const errorText = await response.text().catch(() => "Unknown error");
+    const errorText = await response.text().catch((err) => {
+      console.error('[QPay Gateway] Failed to read error response:', err);
+      return "Unknown error";
+    });
     return {
       success: false,
       error: `Order service returned ${response.status}: ${errorText}`,

@@ -1,3 +1,4 @@
 #!/bin/sh
-npx prisma generate
+set -e
+pnpm exec prisma generate
 exec dumb-init node dist/main.js 

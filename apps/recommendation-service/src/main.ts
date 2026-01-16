@@ -2,6 +2,16 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import router from "./routes/recommendation.route";
 
+// Global error handlers
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('[recommendation-service] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[recommendation-service] Uncaught Exception:', error);
+  process.exit(1);
+});
+
 const app = express();
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ limit: "100mb", extended: true }));

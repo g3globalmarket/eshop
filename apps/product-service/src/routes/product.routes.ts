@@ -22,7 +22,7 @@ import {
   topShops,
   uploadProductImage,
 } from "../controllers/product.controller";
-import isAuthenticated from "@packages/middleware/isAuthenticated";
+import { isAuthenticated } from "@packages/middleware/isAuthenticated";
 import { isSeller } from "@packages/middleware/authorizeRoles";
 
 const router: Router = express.Router();

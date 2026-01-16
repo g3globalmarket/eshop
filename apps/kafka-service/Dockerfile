@@ -11,8 +11,8 @@ COPY pnpm-workspace.yaml ./
 COPY packages/utils/kafka ./packages/utils/kafka
 COPY packages/libs/prisma ./packages/libs/prisma
 
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-RUN pnpm install --prod
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+RUN pnpm install --prod --frozen-lockfile
 
 COPY apps/kafka-service/dist ./dist
 

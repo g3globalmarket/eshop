@@ -15,5 +15,10 @@
   "exclude": [
     "out-tsc",
     "dist"
+  ],
+  "references": [
+    {
+      "path": "../../packages/libs/env-loader"
+    }
   ]
 }

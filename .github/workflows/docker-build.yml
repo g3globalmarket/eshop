@@ -232,18 +232,15 @@ jobs:
       - name: Setup build environment
         if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-backend-changes == 'true'
         run: |
-          # Setup pnpm
-          npm install -g pnpm@8.10.2
+          # Setup pnpm (use version from packageManager)
+          corepack enable
+          corepack prepare pnpm@9.12.3 --activate
 
-          # Create .npmrc
-          echo "auto-install-peers=true" > .npmrc
-          echo "shamefully-hoist=true" >> .npmrc
-
-          # Install dependencies
-          pnpm install
+          # Install dependencies with frozen lockfile
+          pnpm install --frozen-lockfile
 
           # Generate Prisma Client
-          npx prisma generate
+          pnpm exec prisma generate
 
           # Build only this service
           npx nx build ${{ matrix.service }}

@@ -16,8 +16,8 @@ COPY packages/libs/prisma ./packages/libs/prisma
 COPY prisma ./prisma
 
 # Install pnpm and dependencies
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-RUN pnpm install --prod
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+RUN pnpm install --prod --frozen-lockfile
 
 # Copy built application
 COPY apps/admin-service/dist ./dist

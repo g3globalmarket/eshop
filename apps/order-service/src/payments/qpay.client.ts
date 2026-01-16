@@ -123,12 +123,20 @@ class QPayClient {
 
       if (!response.ok) {
         const errorText = await response.text();
+        // Log minimal metadata (status code, endpoint, no secrets)
+        console.error("[QPay] Invoice creation failed", {
+          status: response.status,
+          endpoint: "/v2/invoice",
+          error: errorText.substring(0, 200), // Limit error text length
+        });
         throw new Error(
           `QPay invoice creation failed: ${response.status} ${errorText}`
         );
       }
 
-      const data: QPayInvoiceResponse = await response.json();
+      // Use type assertion (not type annotation) to avoid TS2739 error
+      // TypeScript infers response.json() as {} when using type annotation
+      const data = (await response.json()) as QPayInvoiceResponse;
       return data;
     } catch (error: any) {
       throw new Error(`Failed to create QPay invoice: ${error.message}`);
@@ -180,12 +188,21 @@ class QPayClient {
 
       if (!response.ok) {
         const errorText = await response.text();
+        // Log minimal metadata (status code, endpoint, sessionId if safe)
+        console.error("[QPay] Invoice creation (simple) failed", {
+          status: response.status,
+          endpoint: "/v2/invoice",
+          sessionId: input.sessionId,
+          error: errorText.substring(0, 200), // Limit error text length
+        });
         throw new Error(
           `QPay invoice creation failed: ${response.status} ${errorText}`
         );
       }
 
-      const data: QPayInvoiceSimpleResponse = await response.json();
+      // Use type assertion (not type annotation) to avoid TS2739 error
+      // TypeScript infers response.json() as {} when using type annotation
+      const data = (await response.json()) as QPayInvoiceSimpleResponse;
 
       console.log("[QPay] Invoice created successfully", {
         invoice_id: data.invoice_id,
@@ -237,12 +254,21 @@ class QPayClient {
       if (!response.ok) {
         resultLabel = "error";
         const errorText = await response.text();
+        // Log minimal metadata (status code, endpoint, invoiceId if safe)
+        console.error("[QPay] Payment check failed", {
+          status: response.status,
+          endpoint: "/v2/payment/check",
+          invoiceId,
+          error: errorText.substring(0, 200), // Limit error text length
+        });
         throw new Error(
           `QPay payment check failed: ${response.status} ${errorText}`
         );
       }
 
-      const data: QPayPaymentCheckResponse = await response.json();
+      // Use type assertion (not type annotation) to avoid TS2739 error
+      // TypeScript infers response.json() as {} when using type annotation
+      const data = (await response.json()) as QPayPaymentCheckResponse;
 
       // Increment success counter
       qpayPaymentCheckTotal.inc({ result: "ok", http_status: httpStatusLabel });
@@ -347,7 +373,9 @@ class QPayClient {
         };
       }
 
-      const data: QPayEbarimtV3Response = await response.json();
+      // Use type assertion (not type annotation) to avoid TS2739 error
+      // TypeScript infers response.json() as {} when using type annotation
+      const data = (await response.json()) as QPayEbarimtV3Response;
 
       console.log("[QPay Ebarimt] Created successfully", {
         paymentId: input.payment_id,

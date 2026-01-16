@@ -4,7 +4,7 @@ import { Kafka } from "kafkajs";
 const getBrokers = () => {
   if (process.env.NODE_ENV === 'production' || process.env.DOCKER_ENV === 'true') {
     // Inside Docker containers, use service name
-    return [process.env.KAFKA_BROKERS || "kafka:29092"];
+    return [process.env.KAFKA_BROKERS || "kafka:9092"];
   } else {
     // Local development, use localhost
     return [process.env.KAFKA_BROKERS || "localhost:9092"];

@@ -4,6 +4,6 @@
   "private": true,
   "main": "index.js",
   "dependencies": {
-    "@prisma/client": "^6.11.1"
+    "@prisma/client": "6.7.0"
   }
 } 

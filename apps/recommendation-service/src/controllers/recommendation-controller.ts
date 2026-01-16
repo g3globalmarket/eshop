@@ -88,6 +88,7 @@ export const getRecommendedProducts = async (
           update: { recommendations: recommendedProductIds, lastTrained: now },
           create: {
             userId,
+            lastVisited: now,
             actions: [],
             recommendations: recommendedProductIds,
             lastTrained: now,

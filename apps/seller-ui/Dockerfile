@@ -58,7 +58,7 @@ ENV NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://nomadnet.shop/ws-chatting
 ENV NEXT_PUBLIC_USER_UI_LINK=https://nomadnet.shop
 
 # Generate Prisma client before building
-RUN npx prisma@6.19.1 generate --schema=prisma/schema.prisma
+RUN pnpm exec prisma generate --schema=prisma/schema.prisma
 
 # Use Next.js build directly instead of Nx
 WORKDIR /app/apps/seller-ui

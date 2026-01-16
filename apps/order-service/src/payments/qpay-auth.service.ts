@@ -148,12 +148,19 @@ export class QPayAuthService {
 
       if (!response.ok) {
         const errorText = await response.text();
+        // Log minimal metadata (status code only, no secrets)
+        console.error("[QPay Auth] Token request failed", {
+          status: response.status,
+          error: errorText.substring(0, 200), // Limit error text length
+        });
         throw new Error(
           `QPay token request failed: ${response.status} ${errorText}`
         );
       }
 
-      const data: QPayTokenResponse = await response.json();
+      // Use type assertion (not type annotation) to avoid TS2739 error
+      // TypeScript infers response.json() as {} when using type annotation
+      const data = (await response.json()) as QPayTokenResponse;
 
       // Compute expiresAt
       const now = Math.floor(Date.now() / 1000);

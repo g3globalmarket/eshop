@@ -17,8 +17,8 @@ COPY packages/utils/logs ./packages/utils/logs
 COPY prisma ./prisma
 
 # Install pnpm and dependencies
-RUN corepack enable && corepack prepare pnpm@8.10.2 --activate
-RUN pnpm install --prod
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+RUN pnpm install --prod --frozen-lockfile
 
 # Copy built application
 COPY apps/seller-service/dist ./dist
