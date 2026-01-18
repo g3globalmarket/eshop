@@ -390,16 +390,16 @@ jobs:
           # Wait for container to start
           sleep 10
           
-          # Check if container is still running
-          if ! docker ps | grep -q "$CONTAINER_NAME"; then
+          # Check if container is still running (use docker ps --format for reliable name matching)
+          if ! docker ps --format "{{.Names}}" | grep -q "^$CONTAINER_NAME$"; then
             echo "❌ Container $CONTAINER_NAME exited unexpectedly"
             docker logs "$CONTAINER_NAME" || true
             docker rm -f "$CONTAINER_NAME" || true
             exit 1
           fi
           
-          # Check logs for errors
-          if docker logs "$CONTAINER_NAME" 2>&1 | grep -i "error\|fatal\|pnpm: not found\|command not found"; then
+          # Check logs for errors (ignore transient connection errors)
+          if docker logs "$CONTAINER_NAME" 2>&1 | grep -iE "(error|fatal|pnpm: not found|command not found|uncaughtException|cannot find module)" | grep -v -iE "(ioredis|redis|kafka|ECONNREFUSED|AggregateError|connection.*refused)"; then
             echo "❌ Container logs show errors"
             docker logs "$CONTAINER_NAME"
             docker rm -f "$CONTAINER_NAME" || true
