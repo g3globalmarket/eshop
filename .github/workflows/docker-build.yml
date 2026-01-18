@@ -258,8 +258,16 @@ jobs:
           file: apps/${{ matrix.service }}/Dockerfile
           push: true
           tags: ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
-          cache-from: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache
-          cache-to: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache,mode=max
+          # Use GitHub Actions cache (gha) to reduce Docker Hub pulls
+          # This caches build layers locally in GitHub Actions, reducing registry pulls
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache,mode=max
+          # Don't pull base images if not needed (reduces rate limit hits)
+          pull: false
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
 
@@ -371,8 +379,16 @@ jobs:
           file: apps/${{ matrix.service }}/Dockerfile
           push: true
           tags: ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
-          cache-from: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache
-          cache-to: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache,mode=max
+          # Use GitHub Actions cache (gha) to reduce Docker Hub pulls
+          # This caches build layers locally in GitHub Actions, reducing registry pulls
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache,mode=max
+          # Don't pull base images if not needed (reduces rate limit hits)
+          pull: false
 
       - name: Smoke test built image
         if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-frontend-changes == 'true'
