@@ -3,9 +3,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY apps/chatting-service/package.json ./
+# Copy package files and workspace configuration
+# Root package.json must be copied first for pnpm workspace resolution
+COPY package.json ./
 COPY pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
+COPY .npmrc ./
+COPY apps/chatting-service/package.json ./apps/chatting-service/
 
 # Copy workspace packages
 COPY packages/error-handler ./packages/error-handler

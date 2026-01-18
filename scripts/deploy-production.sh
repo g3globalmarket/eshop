@@ -1,7 +1,24 @@
 #!/bin/bash
-set -e  # Exit on any error
+set -euo pipefail  # Exit on error, undefined vars, pipe failures
 
 echo "🚀 Starting production deployment..."
+
+# Validate compose config before deploying
+echo "🔍 Validating docker-compose configuration..."
+if ! docker compose \
+  -f docker-compose.production.yml \
+  -f docker-compose.override.yml \
+  -f docker-compose.nginx-override.yml \
+  config > /dev/null 2>&1; then
+  echo "❌ docker-compose configuration has errors!"
+  docker compose \
+    -f docker-compose.production.yml \
+    -f docker-compose.override.yml \
+    -f docker-compose.nginx-override.yml \
+    config
+  exit 1
+fi
+echo "✅ Compose config is valid"
 
 # --------------------------------------------------------------------
 # 1) Pull latest images for changed services (если матрица не пуста)

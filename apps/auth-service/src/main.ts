@@ -6,6 +6,15 @@ import router from "./routes/auth.router";
 import swaggerUi from "swagger-ui-express";
 const swaggerDocument = require("./swagger-output.json");
 
+// Validate required environment variables at startup (fail fast with clear error)
+const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingVars.length > 0) {
+  console.error(`[FATAL] Missing required environment variables: ${missingVars.join(', ')}`);
+  console.error(`[FATAL] Service cannot start without these variables.`);
+  process.exit(1);
+}
+
 // Global error handlers
 process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
   console.error('[auth-service] Unhandled Rejection at:', promise, 'reason:', reason);

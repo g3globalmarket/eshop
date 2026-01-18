@@ -4,9 +4,12 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package files and workspace configuration
-COPY apps/admin-service/package.json ./
+# Root package.json must be copied first for pnpm workspace resolution
+COPY package.json ./
 COPY pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
+COPY .npmrc ./
+COPY apps/admin-service/package.json ./apps/admin-service/
 
 # Copy workspace packages that admin-service depends on
 COPY packages/error-handler ./packages/error-handler
@@ -18,6 +21,9 @@ COPY prisma ./prisma
 # Install pnpm and dependencies
 RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 RUN pnpm install --prod --frozen-lockfile
+
+# Generate Prisma Client at build time (not runtime)
+RUN pnpm exec prisma generate --schema=prisma/schema.prisma
 
 # Copy built application
 COPY apps/admin-service/dist ./dist
@@ -48,5 +54,5 @@ USER nodejs
 # Expose the correct port
 EXPOSE 6005
 
-# Use entrypoint script to generate Prisma client at runtime
+# Use entrypoint script (Prisma Client generated at build time)
 ENTRYPOINT ["./entrypoint.sh"]

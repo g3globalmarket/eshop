@@ -2,6 +2,15 @@
 // This must be the FIRST import to ensure env vars are available
 import "@packages/libs/env-loader";
 
+// Validate required environment variables at startup (fail fast with clear error)
+const requiredEnvVars = ['DATABASE_URL'];
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingVars.length > 0) {
+  console.error(`[FATAL] Missing required environment variables: ${missingVars.join(', ')}`);
+  console.error(`[FATAL] Service cannot start without these variables.`);
+  process.exit(1);
+}
+
 // Global error handlers
 process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
   console.error('[api-gateway] Unhandled Rejection at:', promise, 'reason:', reason);

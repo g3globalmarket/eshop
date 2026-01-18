@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail  # Exit on error, undefined vars, pipe failures
 
 # Colors for output
 RED='\033[0;31m'
@@ -87,13 +88,22 @@ echo ""
 echo -e "${GREEN}✅ All images pulled successfully!${NC}"
 echo ""
 
+# Validate compose config before deploying
+echo -e "${YELLOW}🔍 Validating docker-compose configuration...${NC}"
+if ! docker compose -f docker-compose.production.yml config > /dev/null 2>&1; then
+  echo -e "${RED}❌ docker-compose.production.yml has errors!${NC}"
+  docker compose -f docker-compose.production.yml config
+  exit 1
+fi
+echo -e "${GREEN}✅ Compose config is valid${NC}"
+
 # Stop existing containers
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"
-docker-compose -f docker-compose.production.yml down
+docker compose -f docker-compose.production.yml down
 
 # Start services
 echo -e "${YELLOW}🚀 Starting services...${NC}"
-docker-compose -f docker-compose.production.yml up -d
+docker compose -f docker-compose.production.yml up -d
 
 # Wait for services to start
 echo -e "${YELLOW}⏳ Waiting for services to start...${NC}"
@@ -101,7 +111,7 @@ sleep 10
 
 # Check service status
 echo -e "${BLUE}📊 Service Status:${NC}"
-docker-compose -f docker-compose.production.yml ps
+docker compose -f docker-compose.production.yml ps
 
 echo ""
 echo -e "${GREEN}🎉 Deployment completed!${NC}"
@@ -112,7 +122,7 @@ echo -e "  • Seller Dashboard: https://sellers.nomadnet.shop"
 echo -e "  • Admin Panel: https://admin.nomadnet.shop"
 echo ""
 echo -e "${BLUE}🔧 Useful commands:${NC}"
-echo -e "  • View logs: docker-compose -f docker-compose.production.yml logs -f"
-echo -e "  • Restart: docker-compose -f docker-compose.production.yml restart"
-echo -e "  • Stop: docker-compose -f docker-compose.production.yml down"
+echo -e "  • View logs: docker compose -f docker-compose.production.yml logs -f"
+echo -e "  • Restart: docker compose -f docker-compose.production.yml restart"
+echo -e "  • Stop: docker compose -f docker-compose.production.yml down"
 

@@ -208,6 +208,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -258,6 +263,43 @@ jobs:
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
 
+      - name: Smoke test built image
+        if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-backend-changes == 'true'
+        run: |
+          # Pull the image we just built
+          docker pull ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
+          
+          # Run container with minimal env (dummy values for required vars)
+          CONTAINER_NAME="smoke-test-${{ matrix.service }}"
+          docker run -d --name "$CONTAINER_NAME" \
+            -e NODE_ENV=production \
+            -e DATABASE_URL="mongodb://localhost:27017/test" \
+            -e JWT_SECRET="test-secret-for-smoke-test" \
+            -e KAFKA_BROKERS="localhost:9092" \
+            ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest || exit 1
+          
+          # Wait for container to start
+          sleep 10
+          
+          # Check if container is still running
+          if ! docker ps | grep -q "$CONTAINER_NAME"; then
+            echo "❌ Container $CONTAINER_NAME exited unexpectedly"
+            docker logs "$CONTAINER_NAME" || true
+            docker rm -f "$CONTAINER_NAME" || true
+            exit 1
+          fi
+          
+          # Check logs for errors
+          if docker logs "$CONTAINER_NAME" 2>&1 | grep -i "error\|fatal\|pnpm: not found\|command not found"; then
+            echo "❌ Container logs show errors"
+            docker logs "$CONTAINER_NAME"
+            docker rm -f "$CONTAINER_NAME" || true
+            exit 1
+          fi
+          
+          echo "✅ Smoke test passed for ${{ matrix.service }}"
+          docker rm -f "$CONTAINER_NAME" || true
+
   # Build only changed frontend services in parallel
   build-frontend:
     needs: detect-changes
@@ -271,6 +313,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -290,6 +337,22 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Setup build environment
+        if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-frontend-changes == 'true'
+        run: |
+          # Setup pnpm (use version from packageManager)
+          corepack enable
+          corepack prepare pnpm@9.12.3 --activate
+
+          # Install dependencies with frozen lockfile
+          pnpm install --frozen-lockfile
+
+          # Generate Prisma Client
+          pnpm exec prisma generate
+
+          # Build only this service
+          npx nx build ${{ matrix.service }}
+
       - name: Build and push Docker image
         if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-frontend-changes == 'true'
         uses: docker/build-push-action@v5
@@ -300,6 +363,41 @@ jobs:
           tags: ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
           cache-from: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache,mode=max
+
+      - name: Smoke test built image
+        if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-frontend-changes == 'true'
+        run: |
+          # Pull the image we just built
+          docker pull ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
+          
+          # Run container with minimal env
+          CONTAINER_NAME="smoke-test-${{ matrix.service }}"
+          docker run -d --name "$CONTAINER_NAME" \
+            -e NODE_ENV=production \
+            -e NEXT_PUBLIC_SERVER_URI="http://localhost:8080" \
+            ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest || exit 1
+          
+          # Wait for container to start
+          sleep 10
+          
+          # Check if container is still running
+          if ! docker ps | grep -q "$CONTAINER_NAME"; then
+            echo "❌ Container $CONTAINER_NAME exited unexpectedly"
+            docker logs "$CONTAINER_NAME" || true
+            docker rm -f "$CONTAINER_NAME" || true
+            exit 1
+          fi
+          
+          # Check logs for errors
+          if docker logs "$CONTAINER_NAME" 2>&1 | grep -i "error\|fatal\|pnpm: not found\|command not found"; then
+            echo "❌ Container logs show errors"
+            docker logs "$CONTAINER_NAME"
+            docker rm -f "$CONTAINER_NAME" || true
+            exit 1
+          fi
+          
+          echo "✅ Smoke test passed for ${{ matrix.service }}"
+          docker rm -f "$CONTAINER_NAME" || true
 
   # Deploy to EC2
 

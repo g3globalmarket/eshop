@@ -3,10 +3,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY apps/logger-service/package.json ./
+# Copy package files and workspace configuration
+# Root package.json must be copied first for pnpm workspace resolution
+COPY package.json ./
 COPY pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
+COPY .npmrc ./
+COPY apps/logger-service/package.json ./apps/logger-service/
 
 # Copy workspace packages
 COPY packages/error-handler ./packages/error-handler

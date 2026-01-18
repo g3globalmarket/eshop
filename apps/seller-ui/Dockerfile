@@ -9,6 +9,7 @@ RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
+COPY .npmrc ./
 
 # Copy seller-ui package.json
 COPY apps/seller-ui/package.json ./apps/seller-ui/
@@ -62,7 +63,7 @@ RUN pnpm exec prisma generate --schema=prisma/schema.prisma
 
 # Use Next.js build directly instead of Nx
 WORKDIR /app/apps/seller-ui
-RUN npm run build
+RUN pnpm run build
 
 # 3. Production image
 FROM node:20-alpine AS runner

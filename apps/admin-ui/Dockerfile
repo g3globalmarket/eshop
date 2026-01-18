@@ -9,6 +9,7 @@ RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
+COPY .npmrc ./
 
 # Copy admin-ui package.json
 COPY apps/admin-ui/package.json ./apps/admin-ui/
@@ -66,7 +67,7 @@ RUN pnpm exec prisma generate --schema=prisma/schema.prisma
 
 # Use Next.js build directly instead of Nx
 WORKDIR /app/apps/admin-ui
-RUN npm run build
+RUN pnpm run build
 
 # ---- Production Stage ----
 FROM node:20-alpine AS production

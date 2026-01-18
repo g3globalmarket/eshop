@@ -7,6 +7,15 @@ import router from "./routes/seller.routes";
 import swaggerUi from "swagger-ui-express";
 const swaggerDocument = require("./swagger-output.json");
 
+// Validate required environment variables at startup (fail fast with clear error)
+const requiredEnvVars = ['DATABASE_URL'];
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingVars.length > 0) {
+  console.error(`[FATAL] Missing required environment variables: ${missingVars.join(', ')}`);
+  console.error(`[FATAL] Service cannot start without these variables.`);
+  process.exit(1);
+}
+
 // Global error handlers
 process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
   console.error('[seller-service] Unhandled Rejection at:', promise, 'reason:', reason);
