@@ -25,15 +25,28 @@ function getRedisConnectionString(): string {
 }
 
 const redisConnectionString = getRedisConnectionString();
-const redis = new Redis(redisConnectionString);
+// Use lazyConnect to prevent immediate connection attempts and unhandled errors
+// Connection will be established on first command, allowing error handling to be set up first
+const redis = new Redis(redisConnectionString, {
+  lazyConnect: true,
+  maxRetriesPerRequest: null, // Disable retries to prevent spam
+  retryStrategy: () => null, // Don't retry on connection failure
+});
 
-// Attach error handler to prevent "Unhandled error event" spam
-// Log at WARN level (not ERROR) since transient connection errors are expected during startup
+// Attach error handler BEFORE any connection attempts
+// This prevents "[ioredis] Unhandled error event" messages
 redis.on("error", (err) => {
-  // Only log if it's not a connection refused error (those are expected during startup/retries)
-  if (err.message && !err.message.includes("ECONNREFUSED")) {
+  // Suppress ECONNREFUSED errors (expected when Redis is unavailable)
+  // Only log other errors that might indicate configuration issues
+  if (err.message && !err.message.includes("ECONNREFUSED") && !err.message.includes("connect")) {
     console.warn("[Redis] Connection error:", err.message);
   }
+  // Prevent error from being logged as "unhandled" by ioredis
+  // The error is handled here, so it won't crash the process
 });
+
+// Connect lazily - connection happens on first command
+// This allows services to start even if Redis is unavailable
+// Errors will be handled gracefully when Redis operations are attempted
 
 export default redis;

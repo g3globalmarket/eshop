@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useRef, useState } from "react";
 import "react-quill-new/dist/quill.snow.css";
 // @ts-ignore
@@ -14,6 +16,11 @@ const RichTextEditor = ({
   const quillRef = useRef(false); 
 
   useEffect(() => {
+    // Guard against SSR - document only exists in browser
+    if (typeof document === "undefined") {
+      return;
+    }
+    
     if (!quillRef.current) {
       quillRef.current = true; // Mark as mounted
   

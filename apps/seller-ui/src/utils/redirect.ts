@@ -1,5 +1,8 @@
 let redirectToLogin = () => {
-    window.location.href = "/login";
+    // Guard against SSR - window only exists in browser
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
   };
   
   export const setRedirectHandler = (handler: () => void) => {

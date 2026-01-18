@@ -11,6 +11,10 @@ let refreshSubscribers: (() => void)[] = [];
 
 // Handle logout and prevent infinite loops
 const handleLogout = () => {
+  // Guard against SSR - window only exists in browser
+  if (typeof window === "undefined") {
+    return;
+  }
   const publicPaths = ["/login", "/signup", "/forgot-password"];
   const currentPath = window.location.pathname;
   if (!publicPaths.includes(currentPath)) {

@@ -14,8 +14,11 @@ COPY apps/kafka-service/package.json ./apps/kafka-service/
 # Copy required packages
 COPY packages/utils/kafka ./packages/utils/kafka
 COPY packages/libs/prisma ./packages/libs/prisma
+# Copy Prisma schema (required for Prisma Client generation)
+COPY prisma ./prisma
 
 RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+# Install dependencies (Prisma postinstall will generate client from schema)
 RUN pnpm install --prod --frozen-lockfile
 
 COPY apps/kafka-service/dist ./dist
