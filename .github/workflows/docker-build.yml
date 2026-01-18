@@ -326,7 +326,7 @@ jobs:
     strategy:
       matrix: ${{ fromJson(needs.detect-changes.outputs.frontend-matrix) }}
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 2
 
     steps:
       - name: Checkout code
