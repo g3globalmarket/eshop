@@ -19,8 +19,8 @@ NC='\033[0m'
 
 # Check 1: Entrypoints using pnpm/npm/npx at runtime
 echo "1. Checking entrypoints for runtime pnpm/npm/npx usage..."
-PNPM_IN_ENTRYPOINT=$(grep -r "pnpm\|npm\|npx" apps/*/entrypoint.sh 2>/dev/null | grep -v "^#" | grep -v "This ensures" | wc -l | tr -d ' ')
-if [ "$PNPM_IN_ENTRYPOINT" -gt 0 ]; then
+PNPM_IN_ENTRYPOINT=$(grep -r "pnpm\|npm\|npx" apps/*/entrypoint.sh 2>/dev/null | grep -v "^#" | grep -v "This ensures" | wc -l | tr -d ' \n' || echo "0")
+if [ "${PNPM_IN_ENTRYPOINT:-0}" -gt 0 ]; then
   echo -e "${RED}❌ Found $PNPM_IN_ENTRYPOINT entrypoint(s) using pnpm/npm/npx at runtime${NC}"
   grep -r "pnpm\|npm\|npx" apps/*/entrypoint.sh 2>/dev/null | grep -v "^#" | grep -v "This ensures"
   ((ERRORS++))
@@ -31,8 +31,8 @@ echo ""
 
 # Check 2: Runtime Prisma generation
 echo "2. Checking for runtime Prisma generation..."
-RUNTIME_PRISMA=$(grep -r "prisma generate\|prisma migrate" apps/*/entrypoint.sh 2>/dev/null | wc -l | tr -d ' ')
-if [ "$RUNTIME_PRISMA" -gt 0 ]; then
+RUNTIME_PRISMA=$(grep -r "prisma generate\|prisma migrate" apps/*/entrypoint.sh 2>/dev/null | wc -l | tr -d ' \n' || echo "0")
+if [ "${RUNTIME_PRISMA:-0}" -gt 0 ]; then
   echo -e "${RED}❌ Found $RUNTIME_PRISMA entrypoint(s) running Prisma at runtime${NC}"
   grep -r "prisma generate\|prisma migrate" apps/*/entrypoint.sh 2>/dev/null
   ((ERRORS++))
@@ -56,8 +56,8 @@ echo ""
 
 # Check 4: Dockerfiles with Node version not pinned
 echo "4. Checking Node version pinning..."
-UNPINNED_NODE=$(grep "^FROM node:" apps/*/Dockerfile | grep -v "node:20" | wc -l | tr -d ' ')
-if [ "$UNPINNED_NODE" -gt 0 ]; then
+UNPINNED_NODE=$(grep "^FROM node:" apps/*/Dockerfile | grep -v "node:20" | wc -l | tr -d ' \n' || echo "0")
+if [ "${UNPINNED_NODE:-0}" -gt 0 ]; then
   echo -e "${YELLOW}⚠️  Found $UNPINNED_NODE Dockerfile(s) not using Node 20${NC}"
   grep "^FROM node:" apps/*/Dockerfile | grep -v "node:20"
   ((WARNINGS++))
@@ -68,8 +68,8 @@ echo ""
 
 # Check 5: Dockerfiles with pnpm not pinned
 echo "5. Checking pnpm version pinning..."
-UNPINNED_PNPM=$(grep "corepack prepare pnpm@" apps/*/Dockerfile | grep -v "pnpm@9.12.3" | wc -l | tr -d ' ')
-if [ "$UNPINNED_PNPM" -gt 0 ]; then
+UNPINNED_PNPM=$(grep "corepack prepare pnpm@" apps/*/Dockerfile | grep -v "pnpm@9.12.3" | wc -l | tr -d ' \n' || echo "0")
+if [ "${UNPINNED_PNPM:-0}" -gt 0 ]; then
   echo -e "${YELLOW}⚠️  Found $UNPINNED_PNPM Dockerfile(s) not using pnpm@9.12.3${NC}"
   grep "corepack prepare pnpm@" apps/*/Dockerfile | grep -v "pnpm@9.12.3"
   ((WARNINGS++))
@@ -135,8 +135,8 @@ echo ""
 
 # Check 9: Entrypoint strict mode
 echo "9. Checking entrypoint strict mode..."
-STRICT_MODE_COUNT=$(grep -c "set -e" apps/*/entrypoint.sh 2>/dev/null || echo "0")
-if [ "$STRICT_MODE_COUNT" -eq 0 ]; then
+STRICT_MODE_COUNT=$(grep -l "set -e" apps/*/entrypoint.sh 2>/dev/null | wc -l | tr -d ' \n' || echo "0")
+if [ "${STRICT_MODE_COUNT:-0}" -eq 0 ]; then
   echo -e "${YELLOW}⚠️  No entrypoints found with strict mode${NC}"
   ((WARNINGS++))
 else
