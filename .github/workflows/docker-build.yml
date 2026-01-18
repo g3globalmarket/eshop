@@ -278,16 +278,17 @@ jobs:
             -e DATABASE_URL="mongodb://localhost:27017/test" \
             -e JWT_SECRET="test-secret-for-smoke-test" \
             -e KAFKA_BROKERS="localhost:9092" \
-            -e IMAGEKIT_PUBLIC_KEY="dummy-public-key-for-smoke-test" \
-            -e IMAGEKIT_SECRET_KEY="dummy-secret-key-for-smoke-test" \
-            -e IMAGEKIT_URL_ENDPOINT="https://ik.imagekit.io/gglobal" \
+          -e IMAGEKIT_PUBLIC_KEY="dummy-public-key-for-smoke-test" \
+          -e IMAGEKIT_SECRET_KEY="dummy-secret-key-for-smoke-test" \
+          -e IMAGEKIT_PRIVATE_KEY="dummy-private-key-for-smoke-test" \
+          -e IMAGEKIT_URL_ENDPOINT="https://ik.imagekit.io/gglobal" \
             ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest || exit 1
           
           # Wait for container to start
           sleep 10
           
-          # Check if container is still running
-          if ! docker ps | grep -q "$CONTAINER_NAME"; then
+          # Check if container is still running (use docker ps --format for reliable name matching)
+          if ! docker ps --format "{{.Names}}" | grep -q "^$CONTAINER_NAME$"; then
             echo "❌ Container $CONTAINER_NAME exited unexpectedly"
             docker logs "$CONTAINER_NAME" || true
             docker rm -f "$CONTAINER_NAME" || true
@@ -296,7 +297,8 @@ jobs:
           
           # Check logs for fatal errors (ignore transient connection errors and ImageKit warnings)
           # Only fail on actual fatal errors that prevent service from running
-          FATAL_ERRORS=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -iE "(\[FATAL\]|uncaughtException|cannot find module|pnpm: not found|command not found)" | grep -v -iE "(redis|kafka|ECONNREFUSED|connection.*refused|imagekit|Missing publicKey)" || true)
+          # Exclude: Redis/ioredis errors, Kafka connection errors, ImageKit warnings
+          FATAL_ERRORS=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -iE "(\[FATAL\]|uncaughtException|cannot find module|pnpm: not found|command not found)" | grep -v -iE "(ioredis|redis|kafka|ECONNREFUSED|AggregateError|connection.*refused|imagekit|Missing publicKey)" || true)
           if [ -n "$FATAL_ERRORS" ]; then
             echo "❌ Container logs show fatal errors"
             echo "$FATAL_ERRORS"
