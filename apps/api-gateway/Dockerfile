@@ -1,31 +1,39 @@
+# ---- Build Stage ----
 FROM node:20-alpine AS builder
-WORKDIR /repo
 
-# Корень монорепы + pkg сервиса + (если есть) prisma
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-COPY apps/api-gateway/package.json apps/api-gateway/package.json
+WORKDIR /app
+
+# Copy package files and workspace configuration
+# Root package.json must be copied first for pnpm workspace resolution
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+COPY .npmrc ./
+COPY apps/api-gateway/package.json ./apps/api-gateway/
+
+# Copy workspace packages that api-gateway depends on
+COPY packages/libs/env-loader ./packages/libs/env-loader
 COPY prisma ./prisma
 
+# Install pnpm and dependencies
+# Note: We install all deps (not --prod) because we need to build the app
+# prisma CLI is in root dependencies, so it's available
 RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
-
-# 1) Устанавливаем зависимости монорепы (dev тоже — нужен prisma CLI)
 RUN pnpm install --frozen-lockfile
 
-# 2) Копируем весь репозиторий и билдим сервис
+# Generate Prisma Client at build time (before building the app)
+# This ensures the generated client is available in node_modules
+RUN pnpm exec prisma generate --schema=prisma/schema.prisma
+
+# Verify Prisma Client was generated
+RUN ls -la node_modules/.prisma/client || (echo "ERROR: Prisma Client not generated" && exit 1)
+
+# Copy source code and build the application
 COPY . .
-WORKDIR /repo/apps/api-gateway
+WORKDIR /app/apps/api-gateway
 RUN pnpm build
 
-# 3) Готовим самодостаточную папку (без pnpm-симлинков)
-WORKDIR /repo
-RUN pnpm deploy --filter "./apps/api-gateway" /out
-
-# 4) Генерим Prisma-клиент ВНУТРИ /out (где свои node_modules)
-WORKDIR /out
-# используем prisma из корня, указываем явный путь к схеме
-RUN pnpm exec prisma generate --schema=/repo/prisma/schema.prisma
-
-# ---- Runtime ----
+# ---- Production Stage ----
 FROM node:20-alpine AS runner
 
 # Install curl for healthcheck
@@ -39,13 +47,18 @@ WORKDIR /app
 ENV NODE_ENV=production
 EXPOSE 8080
 
-# 5) Копируем готовый артефакт (Prisma Client уже сгенерирован в builder stage)
-COPY --from=builder --chown=nodejs:nodejs /out/ ./
-COPY --chown=nodejs:nodejs prisma ./prisma
-# Prisma Client is already generated in builder stage (line 26), no need to regenerate at runtime
+# Copy files from builder stage
+# IMPORTANT: Copy node_modules BEFORE dist to ensure Prisma Client is available
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/apps/api-gateway/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+
+# Verify Prisma Client exists in the final image
+RUN ls -la node_modules/.prisma/client || (echo "ERROR: Prisma Client missing in final image" && exit 1)
 
 # Switch to non-root user
 USER nodejs
 
-# 6) Старт
+# Start the application
 CMD ["node","dist/main.js"]
