@@ -20,7 +20,7 @@ const CreateShop = ({
   const shopCreateMutation = useMutation({
     mutationFn: async (data: FormData) => {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/api/create-shop`,
+        `/api/create-shop`,
         data
       );
 
