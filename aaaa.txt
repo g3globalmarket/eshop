@@ -1,9 +1,110 @@
-The fix is applied. The diff matches the requirements:
+ubuntu@ip-172-31-48-77:~/eshop$ DOMAIN="nomadnet.shop"
 
-- Added `import dynamic from "next/dynamic";`
-- Removed the static import of `RichTextEditor`
-- Added a dynamic import with `ssr: false` to prevent server-side loading
 
-This prevents `react-quill-new` from accessing `document` during SSR, resolving the "document is not defined" error. The component will only load on the client side, and the page should build and run without SSR crashes.
 
-The fix is minimal and targeted—only the import mechanism changed; the component usage in the JSX remains the same.
+echo "DNS ->" && dig +short $DOMAIN
+
+echo "HTTP ->" && curl -sv "http://$DOMAIN/" -o /dev/null
+
+
+
+echo "HTTPS ->" && curl -skv "https://$DOMAIN/" -o /dev/null
+
+DNS ->
+52.79.231.125
+HTTP ->
+* Host nomadnet.shop:80 was resolved.
+* IPv6: (none)
+* IPv4: 52.79.231.125
+*   Trying 52.79.231.125:80...
+* Connected to nomadnet.shop (52.79.231.125) port 80
+> GET / HTTP/1.1
+> Host: nomadnet.shop
+> User-Agent: curl/8.5.0
+> Accept: */*
+> 
+< HTTP/1.1 301 Moved Permanently
+< Server: nginx/1.29.1
+< Date: Fri, 30 Jan 2026 02:27:34 GMT
+< Content-Type: text/html
+< Content-Length: 169
+< Connection: keep-alive
+< Location: https://nomadnet.shop/
+< 
+{ [169 bytes data]
+* Connection #0 to host nomadnet.shop left intact
+HTTPS ->
+* Host nomadnet.shop:443 was resolved.
+* IPv6: (none)
+* IPv4: 52.79.231.125
+*   Trying 52.79.231.125:443...
+* Connected to nomadnet.shop (52.79.231.125) port 443
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [512 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [122 bytes data]
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+{ [41 bytes data]
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+{ [2134 bytes data]
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+{ [79 bytes data]
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+{ [52 bytes data]
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+} [52 bytes data]
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519 / id-ecPublicKey
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: CN=nomadnet.shop
+*  start date: Jan 13 02:26:25 2026 GMT
+*  expire date: Apr 13 02:26:24 2026 GMT
+*  issuer: C=US; O=Let's Encrypt; CN=E8
+*  SSL certificate verify result: unable to get local issuer certificate (20), continuing anyway.
+*   Certificate level 0: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA384
+*   Certificate level 1: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using sha256WithRSAEncryption
+} [5 bytes data]
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://nomadnet.shop/
+* [HTTP/2] [1] [:method: GET]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: nomadnet.shop]
+* [HTTP/2] [1] [:path: /]
+* [HTTP/2] [1] [user-agent: curl/8.5.0]
+* [HTTP/2] [1] [accept: */*]
+} [5 bytes data]
+> GET / HTTP/2
+> Host: nomadnet.shop
+> User-Agent: curl/8.5.0
+> Accept: */*
+> 
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [265 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [265 bytes data]
+* old SSL session ID is stale, removing
+{ [5 bytes data]
+< HTTP/2 200 
+< server: nginx/1.29.1
+< date: Fri, 30 Jan 2026 02:27:34 GMT
+< content-type: text/html; charset=utf-8
+< content-length: 9932
+< vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Accept-Encoding
+< x-nextjs-cache: HIT
+< x-nextjs-prerender: 1
+< x-nextjs-stale-time: 4294967294
+< x-powered-by: Next.js
+< cache-control: s-maxage=31536000,
+< etag: "vctvs0hq117nw"
+< strict-transport-security: max-age=31536000; includeSubDomains
+< x-frame-options: DENY
+< x-content-type-options: nosniff
+< 
+{ [9932 bytes data]
+* Connection #0 to host nomadnet.shop left intact
+ubuntu@ip-172-31-48-77:~/eshop$ 
