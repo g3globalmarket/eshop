@@ -1,64 +1,35 @@
-eshop git:(main) ✗ docker build --no-cache -f apps/api-gateway/Dockerfile -t api-gateway:prismafix .
+Checking the current Dockerfile state:
 
-docker run --rm api-gateway:prismafix \
-  node -e "require('@prisma/client'); console.log('✓ prisma client ok')"
 
-[+] Building 86.9s (17/22)                                                   docker:desktop-linux
- => [internal] load build definition from Dockerfile                                         0.0s
- => => transferring dockerfile: 1.69kB                                                       0.0s
- => [internal] load metadata for docker.io/library/node:20-alpine                            7.1s
- => [internal] load .dockerignore                                                            0.0s
- => => transferring context: 146B                                                            0.0s
- => [internal] load build context                                                           19.0s
- => => transferring context: 1.09GB                                                         19.0s
- => [builder  1/11] FROM docker.io/library/node:20-alpine@sha256:09e2b3d9726018aecf269bd35  10.4s
- => => resolve docker.io/library/node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf750  0.0s
- => => sha256:b84d38c2ed5610a9544ddba1a8feb24733822e5c9409816c26c858d2a270efa7 445B / 445B   0.5s
- => => sha256:f3e17969cb2d3834a243108c5903feec6ca60dc3607b03867527e15914e86 1.26MB / 1.26MB  0.8s
- => => sha256:d8ad8cd72600f46cc068e16c39046ebc76526e41051f43a8c249884b20093 4.20MB / 4.20MB  1.4s
- => => sha256:8fb920e5d251bfb3a5bac54cb1ee6be01e588068fecdf867141fb05734c 43.12MB / 43.12MB  5.1s
- => => extracting sha256:d8ad8cd72600f46cc068e16c39046ebc76526e41051f43a8c249884b200936c0    1.1s
- => => extracting sha256:8fb920e5d251bfb3a5bac54cb1ee6be01e588068fecdf867141fb05734cd3df8    4.6s
- => => extracting sha256:f3e17969cb2d3834a243108c5903feec6ca60dc3607b03867527e15914e86f6a    0.5s
- => => extracting sha256:b84d38c2ed5610a9544ddba1a8feb24733822e5c9409816c26c858d2a270efa7    0.1s
- => [builder  2/11] WORKDIR /repo                                                            0.3s
- => [runner 2/8] RUN apk add --no-cache curl libc6-compat                                    5.5s
- => [builder  3/11] RUN apk add --no-cache libc6-compat                                      4.1s
- => [builder  4/11] RUN corepack enable && corepack prepare pnpm@9.12.3 --activate           6.8s
- => [runner 3/8] RUN addgroup -g 1001 -S nodejs  && adduser -S nodejs -u 1001                2.1s
- => [runner 4/8] WORKDIR /app                                                                0.4s
- => [builder  5/11] COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./           0.1s
- => [builder  6/11] COPY apps/api-gateway/package.json apps/api-gateway/package.json         0.0s
- => [builder  7/11] COPY prisma ./prisma                                                     0.0s
- => [builder  8/11] RUN pnpm install --frozen-lockfile                                      47.7s
- => [builder  9/11] COPY . .                                                                 7.4s
- => ERROR [builder 10/11] RUN pnpm exec prisma generate --schema=prisma/schema.prisma   &&   2.6s
-------
- > [builder 10/11] RUN pnpm exec prisma generate --schema=prisma/schema.prisma   && test -d node_modules/.prisma/client   || (echo "ERROR: Prisma Client not generated in builder stage" && exit 1):
-1.772 Prisma schema loaded from prisma/schema.prisma
-2.074 Warning: You did not specify an output path for your `generator` in schema.prisma. This behavior is deprecated and will no longer be supported in Prisma 7.0.0. To learn more visit https://pris.ly/cli/output-path
-2.467 
-2.467 ✔ Generated Prisma Client (v6.7.0) to ./node_modules/.pnpm/@prisma+client@6.7.0_prisma@6.7.0_typescript@5.7.2__typescript@5.7.2/node_modules/@prisma/client in 293ms
-2.467 
-2.467 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
-2.467 
-2.467 Help us improve the Prisma ORM for everyone. Share your feedback in a short 2-min survey: https://pris.ly/orm/survey/release-5-22
-2.467 
-2.537 ERROR: Prisma Client not generated in builder stage
-------
-Dockerfile:22
---------------------
-  21 |     # Generate Prisma Client (root schema) + fail fast
-  22 | >>> RUN pnpm exec prisma generate --schema=prisma/schema.prisma \
-  23 | >>>   && test -d node_modules/.prisma/client \
-  24 | >>>   || (echo "ERROR: Prisma Client not generated in builder stage" && exit 1)
-  25 |     
---------------------
-ERROR: failed to solve: process "/bin/sh -c pnpm exec prisma generate --schema=prisma/schema.prisma   && test -d node_modules/.prisma/client   || (echo \"ERROR: Prisma Client not generated in builder stage\" && exit 1)" did not complete successfully: exit code: 1
+[1 tool called]
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/o1ohv4rtf38opjzbekxcumkvg
-Unable to find image 'api-gateway:prismafix' locally
-docker: Error response from daemon: pull access denied for api-gateway, repository does not exist or may require 'docker login'
 
-Run 'docker run --help' for more information
-➜  eshop git:(main) ✗ 
+The functional checks are already in place. Here's the minimal diff showing what changed:
+
+## Minimal Dockerfile Diff
+
+```diff
+--- a/apps/api-gateway/Dockerfile
++++ b/apps/api-gateway/Dockerfile
+@@ -20,7 +20,7 @@ ENV DATABASE_URL=${DATABASE_URL}
+ # Generate Prisma Client (root schema) + fail fast
+ RUN pnpm exec prisma generate --schema=prisma/schema.prisma \
+-  && test -d node_modules/.prisma/client \
++  && node -e "require('@prisma/client'); console.log('✓ Prisma Client OK (builder)')" \
+   || (echo "ERROR: Prisma Client not generated in builder stage" && exit 1)
+ 
+ # Build from repo root (Nx target)
+@@ -44,7 +44,6 @@ COPY --from=builder /repo/prisma ./prisma
+ # Verify Prisma Client exists in final image
+-RUN test -d node_modules/.prisma/client \
+- && node -e "require('@prisma/client'); console.log('✓ Prisma Client verified in runtime image')" \
++RUN node -e "require('@prisma/client'); console.log('✓ Prisma Client OK (runtime)')" \
+  || (echo "ERROR: Prisma Client missing or invalid in final image" && exit 1)
+```
+
+## Summary
+
+- Builder stage (line 23): Replaced `test -d node_modules/.prisma/client` with `node -e "require('@prisma/client')"`
+- Runtime stage (line 46): Removed `test -d node_modules/.prisma/client &&` and kept only the functional check
+
+The Dockerfile now uses functional checks that work with pnpm's virtual store layout. Both stages verify Prisma Client by requiring it instead of checking directory existence.

@@ -20,7 +20,7 @@ ENV DATABASE_URL=${DATABASE_URL}
 
 # Generate Prisma Client (root schema) + fail fast
 RUN pnpm exec prisma generate --schema=prisma/schema.prisma \
-  && test -d node_modules/.prisma/client \
+  && node -e "require('@prisma/client'); console.log('✓ Prisma Client OK (builder)')" \
   || (echo "ERROR: Prisma Client not generated in builder stage" && exit 1)
 
 # Build from repo root (Nx target)
@@ -43,8 +43,7 @@ COPY --from=builder /repo/node_modules ./node_modules
 COPY --from=builder /repo/prisma ./prisma
 
 # Verify Prisma Client exists in final image
-RUN test -d node_modules/.prisma/client \
- && node -e "require('@prisma/client'); console.log('✓ Prisma Client verified in runtime image')" \
+RUN node -e "require('@prisma/client'); console.log('✓ Prisma Client OK (runtime)')" \
  || (echo "ERROR: Prisma Client missing or invalid in final image" && exit 1)
 
 USER nodejs
