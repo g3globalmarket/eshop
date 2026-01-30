@@ -1,110 +1,164 @@
-ubuntu@ip-172-31-48-77:~/eshop$ DOMAIN="nomadnet.shop"
-
-
-
-echo "DNS ->" && dig +short $DOMAIN
-
-echo "HTTP ->" && curl -sv "http://$DOMAIN/" -o /dev/null
-
-
-
-echo "HTTPS ->" && curl -skv "https://$DOMAIN/" -o /dev/null
-
-DNS ->
-52.79.231.125
-HTTP ->
-* Host nomadnet.shop:80 was resolved.
-* IPv6: (none)
-* IPv4: 52.79.231.125
-*   Trying 52.79.231.125:80...
-* Connected to nomadnet.shop (52.79.231.125) port 80
-> GET / HTTP/1.1
-> Host: nomadnet.shop
-> User-Agent: curl/8.5.0
-> Accept: */*
-> 
-< HTTP/1.1 301 Moved Permanently
-< Server: nginx/1.29.1
-< Date: Fri, 30 Jan 2026 02:27:34 GMT
-< Content-Type: text/html
-< Content-Length: 169
-< Connection: keep-alive
-< Location: https://nomadnet.shop/
-< 
-{ [169 bytes data]
-* Connection #0 to host nomadnet.shop left intact
-HTTPS ->
-* Host nomadnet.shop:443 was resolved.
-* IPv6: (none)
-* IPv4: 52.79.231.125
-*   Trying 52.79.231.125:443...
-* Connected to nomadnet.shop (52.79.231.125) port 443
-* ALPN: curl offers h2,http/1.1
-} [5 bytes data]
-* TLSv1.3 (OUT), TLS handshake, Client hello (1):
-} [512 bytes data]
-* TLSv1.3 (IN), TLS handshake, Server hello (2):
-{ [122 bytes data]
-* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
-{ [41 bytes data]
-* TLSv1.3 (IN), TLS handshake, Certificate (11):
-{ [2134 bytes data]
-* TLSv1.3 (IN), TLS handshake, CERT verify (15):
-{ [79 bytes data]
-* TLSv1.3 (IN), TLS handshake, Finished (20):
-{ [52 bytes data]
-* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
-} [1 bytes data]
-* TLSv1.3 (OUT), TLS handshake, Finished (20):
-} [52 bytes data]
-* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519 / id-ecPublicKey
-* ALPN: server accepted h2
-* Server certificate:
-*  subject: CN=nomadnet.shop
-*  start date: Jan 13 02:26:25 2026 GMT
-*  expire date: Apr 13 02:26:24 2026 GMT
-*  issuer: C=US; O=Let's Encrypt; CN=E8
-*  SSL certificate verify result: unable to get local issuer certificate (20), continuing anyway.
-*   Certificate level 0: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA384
-*   Certificate level 1: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using sha256WithRSAEncryption
-} [5 bytes data]
-* using HTTP/2
-* [HTTP/2] [1] OPENED stream for https://nomadnet.shop/
-* [HTTP/2] [1] [:method: GET]
-* [HTTP/2] [1] [:scheme: https]
-* [HTTP/2] [1] [:authority: nomadnet.shop]
-* [HTTP/2] [1] [:path: /]
-* [HTTP/2] [1] [user-agent: curl/8.5.0]
-* [HTTP/2] [1] [accept: */*]
-} [5 bytes data]
-> GET / HTTP/2
-> Host: nomadnet.shop
-> User-Agent: curl/8.5.0
-> Accept: */*
-> 
-{ [5 bytes data]
-* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
-{ [265 bytes data]
-* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
-{ [265 bytes data]
-* old SSL session ID is stale, removing
-{ [5 bytes data]
-< HTTP/2 200 
-< server: nginx/1.29.1
-< date: Fri, 30 Jan 2026 02:27:34 GMT
-< content-type: text/html; charset=utf-8
-< content-length: 9932
-< vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Accept-Encoding
-< x-nextjs-cache: HIT
-< x-nextjs-prerender: 1
-< x-nextjs-stale-time: 4294967294
-< x-powered-by: Next.js
-< cache-control: s-maxage=31536000,
-< etag: "vctvs0hq117nw"
-< strict-transport-security: max-age=31536000; includeSubDomains
-< x-frame-options: DENY
-< x-content-type-options: nosniff
-< 
-{ [9932 bytes data]
-* Connection #0 to host nomadnet.shop left intact
+ubuntu@ip-172-31-48-77:~/eshop$ docker logs --tail=300 eshop-auth-service-1 | grep -iE "email|smtp|mail|send|nodemailer|ses|mailgun|sendgrid|error"
+{"level":"WARN","timestamp":"2026-01-30T03:14:01.099Z","logger":"kafkajs","message":"KafkaJS v2.0.0 switched default partitioner. To retain the same partitioning behavior as in previous versions, create the producer with the option \"createPartitioner: Partitioners.LegacyPartitioner\". See the migration guide at https://kafka.js.org/docs/migration-guide-v2.0.0#producer-new-default-partitioner for details. Silence this warning by setting the environment variable \"KAFKAJS_NO_PARTITIONER_WARNING=1\""}
+AppError: {
+  method: 'POST',
+  url: '/api/refresh-token',
+  statusCode: 400,
+  message: 'Unauthorized! No refresh token.',
+  stack: 'Error: Unauthorized! No refresh token.\n' +
+    '    at new AppError (/app/dist/main.js:74:15)\n' +
+    '    at new ValidationError (/app/dist/main.js:88:9)\n' +
+    '    at refreshToken (/app/dist/main.js:399:25)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)\n' +
+    '    at Route.dispatch (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:119:3)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at /app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:284:15\n' +
+    '    at Function.process_params (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)'
+}
+AppError: {
+  method: 'POST',
+  url: '/api/refresh-token',
+  statusCode: 400,
+  message: 'Unauthorized! No refresh token.',
+  stack: 'Error: Unauthorized! No refresh token.\n' +
+    '    at new AppError (/app/dist/main.js:74:15)\n' +
+    '    at new ValidationError (/app/dist/main.js:88:9)\n' +
+    '    at refreshToken (/app/dist/main.js:399:25)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)\n' +
+    '    at Route.dispatch (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:119:3)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at /app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:284:15\n' +
+    '    at Function.process_params (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)'
+}
+AppError: {
+  method: 'POST',
+  url: '/api/refresh-token',
+  statusCode: 400,
+  message: 'Unauthorized! No refresh token.',
+  stack: 'Error: Unauthorized! No refresh token.\n' +
+    '    at new AppError (/app/dist/main.js:74:15)\n' +
+    '    at new ValidationError (/app/dist/main.js:88:9)\n' +
+    '    at refreshToken (/app/dist/main.js:399:25)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)\n' +
+    '    at Route.dispatch (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:119:3)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at /app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:284:15\n' +
+    '    at Function.process_params (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)'
+}
+AppError: {
+  method: 'POST',
+  url: '/api/refresh-token',
+  statusCode: 400,
+  message: 'Unauthorized! No refresh token.',
+  stack: 'Error: Unauthorized! No refresh token.\n' +
+    '    at new AppError (/app/dist/main.js:74:15)\n' +
+    '    at new ValidationError (/app/dist/main.js:88:9)\n' +
+    '    at refreshToken (/app/dist/main.js:399:25)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)\n' +
+    '    at Route.dispatch (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:119:3)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at /app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:284:15\n' +
+    '    at Function.process_params (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)'
+}
+AppError: {
+  method: 'POST',
+  url: '/api/refresh-token',
+  statusCode: 400,
+  message: 'Unauthorized! No refresh token.',
+  stack: 'Error: Unauthorized! No refresh token.\n' +
+    '    at new AppError (/app/dist/main.js:74:15)\n' +
+    '    at new ValidationError (/app/dist/main.js:88:9)\n' +
+    '    at refreshToken (/app/dist/main.js:399:25)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)\n' +
+    '    at Route.dispatch (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:119:3)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at /app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:284:15\n' +
+    '    at Function.process_params (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)'
+}
+AppError: {
+  method: 'POST',
+  url: '/api/refresh-token',
+  statusCode: 400,
+  message: 'Unauthorized! No refresh token.',
+  stack: 'Error: Unauthorized! No refresh token.\n' +
+    '    at new AppError (/app/dist/main.js:74:15)\n' +
+    '    at new ValidationError (/app/dist/main.js:88:9)\n' +
+    '    at refreshToken (/app/dist/main.js:399:25)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)\n' +
+    '    at Route.dispatch (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:119:3)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at /app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:284:15\n' +
+    '    at Function.process_params (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)'
+}
+Error sending email Error: ENOENT: no such file or directory, open '/app/apps/auth-service/src/utils/email-templates/user-activation-mail.ejs'
+AppError: {
+  method: 'POST',
+  url: '/api/refresh-token',
+  statusCode: 400,
+  message: 'Unauthorized! No refresh token.',
+  stack: 'Error: Unauthorized! No refresh token.\n' +
+    '    at new AppError (/app/dist/main.js:74:15)\n' +
+    '    at new ValidationError (/app/dist/main.js:88:9)\n' +
+    '    at refreshToken (/app/dist/main.js:399:25)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)\n' +
+    '    at Route.dispatch (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:119:3)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at /app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:284:15\n' +
+    '    at Function.process_params (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)'
+}
+AppError: {
+  method: 'POST',
+  url: '/api/refresh-token',
+  statusCode: 400,
+    at renderEmailTemplate (/app/dist/main.js:1021:26)
+  message: 'Unauthorized! No refresh token.',
+  stack: 'Error: Unauthorized! No refresh token.\n' +
+    at sendEmail (/app/dist/main.js:1026:28) {
+    '    at new AppError (/app/dist/main.js:74:15)\n' +
+    '    at new ValidationError (/app/dist/main.js:88:9)\n' +
+  path: '/app/apps/auth-service/src/utils/email-templates/user-activation-mail.ejs'
+    '    at refreshToken (/app/dist/main.js:399:25)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)\n' +
+    '    at Route.dispatch (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:119:3)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at /app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:284:15\n' +
+    '    at Function.process_params (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)'
+}
+AppError: {
+  method: 'POST',
+  url: '/api/refresh-token',
+  statusCode: 400,
+  message: 'Unauthorized! No refresh token.',
+  stack: 'Error: Unauthorized! No refresh token.\n' +
+    '    at new AppError (/app/dist/main.js:74:15)\n' +
+    '    at new ValidationError (/app/dist/main.js:88:9)\n' +
+    '    at refreshToken (/app/dist/main.js:399:25)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:149:13)\n' +
+    '    at Route.dispatch (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/route.js:119:3)\n' +
+    '    at Layer.handle [as handle_request] (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/layer.js:95:5)\n' +
+    '    at /app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:284:15\n' +
+    '    at Function.process_params (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:346:12)\n' +
+    '    at next (/app/node_modules/.pnpm/express@4.22.1/node_modules/express/lib/router/index.js:280:10)'
+}
+Error sending email Error: ENOENT: no such file or directory, open '/app/apps/auth-service/src/utils/email-templates/user-activation-mail.ejs'
+    at renderEmailTemplate (/app/dist/main.js:1021:26)
+    at sendEmail (/app/dist/main.js:1026:28) {
+  path: '/app/apps/auth-service/src/utils/email-templates/user-activation-mail.ejs'
 ubuntu@ip-172-31-48-77:~/eshop$ 

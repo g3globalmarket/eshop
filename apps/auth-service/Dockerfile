@@ -29,6 +29,8 @@ RUN pnpm exec prisma generate --schema=prisma/schema.prisma
 # Copy built application
 COPY apps/auth-service/dist ./dist
 COPY apps/auth-service/entrypoint.sh ./entrypoint.sh
+# Copy email templates (needed at runtime)
+COPY apps/auth-service/src/utils/email-templates ./apps/auth-service/src/utils/email-templates
 
 # ---- Production Stage ----
 FROM node:20-alpine
@@ -48,6 +50,8 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /app/entrypoint.sh ./entrypoint.sh
+# Copy email templates to runtime (required for email sending)
+COPY --from=builder --chown=nodejs:nodejs /app/apps/auth-service/src/utils/email-templates ./apps/auth-service/src/utils/email-templates
 
 # Switch to non-root user
 USER nodejs
