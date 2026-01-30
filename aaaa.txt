@@ -1,35 +1,9 @@
-Checking the current Dockerfile state:
+The fix is applied. The diff matches the requirements:
 
+- Added `import dynamic from "next/dynamic";`
+- Removed the static import of `RichTextEditor`
+- Added a dynamic import with `ssr: false` to prevent server-side loading
 
-[1 tool called]
+This prevents `react-quill-new` from accessing `document` during SSR, resolving the "document is not defined" error. The component will only load on the client side, and the page should build and run without SSR crashes.
 
-
-The functional checks are already in place. Here's the minimal diff showing what changed:
-
-## Minimal Dockerfile Diff
-
-```diff
---- a/apps/api-gateway/Dockerfile
-+++ b/apps/api-gateway/Dockerfile
-@@ -20,7 +20,7 @@ ENV DATABASE_URL=${DATABASE_URL}
- # Generate Prisma Client (root schema) + fail fast
- RUN pnpm exec prisma generate --schema=prisma/schema.prisma \
--  && test -d node_modules/.prisma/client \
-+  && node -e "require('@prisma/client'); console.log('✓ Prisma Client OK (builder)')" \
-   || (echo "ERROR: Prisma Client not generated in builder stage" && exit 1)
- 
- # Build from repo root (Nx target)
-@@ -44,7 +44,6 @@ COPY --from=builder /repo/prisma ./prisma
- # Verify Prisma Client exists in final image
--RUN test -d node_modules/.prisma/client \
-- && node -e "require('@prisma/client'); console.log('✓ Prisma Client verified in runtime image')" \
-+RUN node -e "require('@prisma/client'); console.log('✓ Prisma Client OK (runtime)')" \
-  || (echo "ERROR: Prisma Client missing or invalid in final image" && exit 1)
-```
-
-## Summary
-
-- Builder stage (line 23): Replaced `test -d node_modules/.prisma/client` with `node -e "require('@prisma/client')"`
-- Runtime stage (line 46): Removed `test -d node_modules/.prisma/client &&` and kept only the functional check
-
-The Dockerfile now uses functional checks that work with pnpm's virtual store layout. Both stages verify Prisma Client by requiring it instead of checking directory existence.
+The fix is minimal and targeted—only the import mechanism changed; the component usage in the JSX remains the same.

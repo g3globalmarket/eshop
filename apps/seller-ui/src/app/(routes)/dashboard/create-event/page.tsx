@@ -6,15 +6,21 @@ import axiosInstance from "apps/seller-ui/src/utils/axiosInstance";
 import { isProtected } from "apps/seller-ui/src/utils/protected";
 import { Wand2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import ColorSelector from "packages/components/color-selector";
 import CustomProperties from "packages/components/custom-properties";
 import CustomSpecifications from "packages/components/custom-specifications";
 import Input from "packages/components/input";
-import RichTextEditor from "packages/components/rich-text-editor";
 import SizeSelector from "packages/components/size-selector";
 import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+
+// Dynamic import to prevent SSR crash - react-quill-new accesses document on import
+const RichTextEditor = dynamic(
+  () => import("packages/components/rich-text-editor"),
+  { ssr: false }
+);
 
 interface UploadedImage {
   fileId: string;
