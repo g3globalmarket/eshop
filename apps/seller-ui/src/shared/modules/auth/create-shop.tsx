@@ -3,14 +3,14 @@ import { shopCategories } from "apps/seller-ui/src/utils/categories";
 import axios from "axios";
 import React from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 
 const CreateShop = ({
   sellerId,
-  setActiveStep,
 }: {
   sellerId: string;
-  setActiveStep: (step: number) => void;
 }) => {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -27,7 +27,7 @@ const CreateShop = ({
       return response.data;
     },
     onSuccess: () => {
-      setActiveStep(3);
+      router.push("/login");
     },
   });
 

@@ -505,8 +505,8 @@ export const verifySeller = async (
   try {
     const { email, otp, password, name, phone_number, country } = req.body;
 
-    if (!email || !otp || !password || !name || !phone_number || !country) {
-      return next(new ValidationError("All fields are required!"));
+    if (!email || !otp || !password || !name) {
+      return next(new ValidationError("All required fields are missing!"));
     }
 
     const existingSeller = await prisma.sellers.findUnique({
@@ -526,8 +526,8 @@ export const verifySeller = async (
         name,
         email,
         password: hashedPassword,
-        country,
-        phone_number,
+        country: country?.trim() ? country.trim() : undefined,
+        phone_number: phone_number?.trim() ? phone_number.trim() : undefined,
       },
     });
 

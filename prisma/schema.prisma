@@ -86,8 +86,8 @@ model sellers {
   id           String    @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   email        String    @unique
-  phone_number String
-  country      String
+  phone_number String?
+  country      String?
   password     String
   stripeId     String?
   shop         shops?

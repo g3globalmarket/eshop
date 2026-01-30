@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form";
 import axios, { AxiosError } from "axios";
 import { countries } from "apps/seller-ui/src/utils/countires";
 import CreateShop from "apps/seller-ui/src/shared/modules/auth/create-shop";
-import StripeLogo from "apps/seller-ui/src/assets/svgs/stripe-logo";
 
 const Signup = () => {
   const [activeStep, setActiveStep] = useState(1);
@@ -76,7 +75,12 @@ const Signup = () => {
   });
 
   const onSubmit = (data: any) => {
-    signupMutation.mutate(data);
+    const formData = {
+      ...data,
+      phone_number: data.phone_number?.trim() || undefined,
+      country: data.country || undefined,
+    };
+    signupMutation.mutate(formData);
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -106,27 +110,12 @@ const Signup = () => {
     }
   };
 
-  const connectStipe = async () => {
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/auth/api/create-stripe-link`,
-        { sellerId }
-      );
-
-      if (response.data.url) {
-        window.location.href = response.data.url;
-      }
-    } catch (error) {
-      console.error("Stripe Connection Error:", error);
-    }
-  };
-
   return (
     <div className="w-full bg-[#f1f1f1] flex flex-col items-center pt-10 min-h-screen">
       {/* Stepper */}
       <div className="relative flex items-center justify-between md:w-[50%] mb-8">
         <div className="absolute top-[25%] left-0 w-[80%] md:w-[90%] h-1 bg-gray-300 z-10" />
-        {[1, 2, 3].map((step) => (
+        {[1, 2].map((step) => (
           <div key={step}>
             <div
               className={`w-10 h-10 relative z-20 flex items-center justify-center rounded-full text-white font-bold ${
@@ -139,11 +128,8 @@ const Signup = () => {
               {step === 1
                 // ? "Create Account"
                 ? "Данс үүсгэх"
-                : step === 2
                 // ? "Setup Shop"
-                ? "Дэлгүүр тохируулах"
-                // : "Connect Bank"
-                : "Банк холбох"}
+                : "Дэлгүүр тохируулах"}
             </span>
           </div>
         ))}
@@ -202,34 +188,14 @@ const Signup = () => {
                   type="tel"
                   placeholder="880178583****"
                   className="w-full p-2 border border-gray-300 outline-0 rounded-[4px] mb-1"
-                  {...register("phone_number", {
-                    required: "Phone Number is required",
-                    pattern: {
-                      value: /^\+?[1-9]\d{1,14}$/, // Follows E.164 format
-                      message: "Invalid phone number format",
-                    },
-                    minLength: {
-                      value: 10,
-                      message: "Phone number must be at least 10 digits",
-                    },
-                    maxLength: {
-                      value: 15,
-                      message: "Phone number cannot exceed 15 digits",
-                    },
-                  })}
+                  {...register("phone_number")}
                 />
-
-                {errors.phone_number && (
-                  <p className="text-red-500 text-sm">
-                    {String(errors.phone_number.message)}
-                  </p>
-                )}
 
                 {/* <label className="block text-gray-700 mb-1">Country</label> */}
                 <label className="block text-gray-700 mb-1">Улс</label>
                 <select
                   className="w-full p-2 border border-gray-300 outline-0 rounded-[4px] mb-1 bg-white"
-                  {...register("country", { required: "Country is required" })}
+                  {...register("country")}
                 >
                   {/* <option value="">Select your country</option> */}
                   <option value="">Улсаа сонгоно уу</option>
@@ -239,12 +205,6 @@ const Signup = () => {
                     </option>
                   ))}
                 </select>
-
-                {errors.country && (
-                  <p className="text-red-500 text-sm">
-                    {String(errors.country.message)}
-                  </p>
-                )}
 
                 {/* <label className="block text-gray-700 mb-1">Password</label> */}
                 <label className="block text-gray-700 mb-1">Нууц үг</label>
@@ -357,21 +317,7 @@ const Signup = () => {
           </>
         )}
         {activeStep === 2 && (
-          <CreateShop sellerId={sellerId} setActiveStep={setActiveStep} />
-        )}
-        {activeStep === 3 && (
-          <div className="text-center">
-            {/* <h3 className="text-2xl font-semibold">Withdraw Method</h3> */}
-            <h3 className="text-2xl font-semibold">Мөнгө татах арга</h3>
-            <br />
-            <button
-              className="w-full m-auto flex items-center justify-center gap-3 text-lg bg-[#334155] text-white py-2 rounded-lg"
-              onClick={connectStipe}
-            >
-              {/* Connect Stripe */}
-              Stripe холбох <StripeLogo />
-            </button>
-          </div>
+          <CreateShop sellerId={sellerId} />
         )}
       </div>
     </div>
