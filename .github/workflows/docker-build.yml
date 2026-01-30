@@ -32,6 +32,7 @@ env:
 concurrency:
   group: deploy-production
   cancel-in-progress: false
+
 jobs:
   # Detect which services have changed
   detect-changes:
@@ -97,109 +98,121 @@ jobs:
             logger_service:
               - apps/logger-service/**
               - packages/utils/logs/**
-              - packages/utils/kafka/**
               - packages/middleware/**
               - packages/error-handler/**
             recommendation_service:
               - apps/recommendation-service/**
+              - packages/libs/prisma/**
               - packages/middleware/**
               - packages/error-handler/**
             api_gateway:
               - apps/api-gateway/**
-              - packages/libs/redis/**
-              - packages/libs/prisma/**
               - packages/middleware/**
               - packages/error-handler/**
-              - packages/utils/logs/**
             user_ui:
               - apps/user-ui/**
               - packages/components/**
-              - packages/utils/**
-              - packages/libs/**
             seller_ui:
               - apps/seller-ui/**
               - packages/components/**
-              - packages/utils/**
-              - packages/libs/**
             admin_ui:
               - apps/admin-ui/**
               - packages/components/**
-              - packages/utils/**
-              - packages/libs/**
+            shared:
+              - package.json
+              - pnpm-lock.yaml
+              - pnpm-workspace.yaml
+              - prisma/**
 
-      - name: Set deployment matrix
+      - name: Set matrix for changed services
         id: set-matrix
         run: |
-          # Backend services mapping
-          declare -A backend_services=(
-            ["auth_service"]="auth-service"
-            ["product_service"]="product-service"
-            ["order_service"]="order-service"
-            ["seller_service"]="seller-service"
-            ["admin_service"]="admin-service"
-            ["chatting_service"]="chatting-service"
-            ["kafka_service"]="kafka-service"
-            ["logger_service"]="logger-service"
-            ["recommendation_service"]="recommendation-service"
-            ["api_gateway"]="api-gateway"
-          )
-
-          # Frontend apps mapping
-          declare -A frontend_apps=(
-            ["user_ui"]="user-ui"
-            ["seller_ui"]="seller-ui"
-            ["admin_ui"]="admin-ui"
-          )
-
           # Initialize arrays
-          backend_changed=()
-          frontend_changed=()
+          BACKEND_SERVICES=()
+          FRONTEND_SERVICES=()
 
-          # Check which backend services changed
-          for key in "${!backend_services[@]}"; do
-            if [[ "${{ steps.changed-files.outputs.${key}_any_changed }}" == "true" ]]; then
-              backend_changed+=("${backend_services[$key]}")
+          # Check if force rebuild is requested
+          if [[ "${{ github.event.inputs.force_rebuild }}" == "true" ]]; then
+            echo "Force rebuild requested - building all services"
+            BACKEND_SERVICES=("auth-service" "product-service" "order-service" "seller-service" "admin-service" "chatting-service" "kafka-service" "logger-service" "recommendation-service" "api-gateway")
+            FRONTEND_SERVICES=("user-ui" "seller-ui" "admin-ui")
+          else
+            # Check shared files (affects all services)
+            if [[ "${{ steps.changed-files.outputs.shared_any_changed }}" == "true" ]]; then
+              echo "Shared files changed - building all services"
+              BACKEND_SERVICES=("auth-service" "product-service" "order-service" "seller-service" "admin-service" "chatting-service" "kafka-service" "logger-service" "recommendation-service" "api-gateway")
+              FRONTEND_SERVICES=("user-ui" "seller-ui" "admin-ui")
+            else
+              # Check individual services (ВАЖНО: только явные outputs, никаких ${key})
+              [[ "${{ steps.changed-files.outputs.auth_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("auth-service")
+              [[ "${{ steps.changed-files.outputs.product_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("product-service")
+              [[ "${{ steps.changed-files.outputs.order_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("order-service")
+              [[ "${{ steps.changed-files.outputs.seller_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("seller-service")
+              [[ "${{ steps.changed-files.outputs.admin_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("admin-service")
+              [[ "${{ steps.changed-files.outputs.chatting_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("chatting-service")
+              [[ "${{ steps.changed-files.outputs.kafka_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("kafka-service")
+              [[ "${{ steps.changed-files.outputs.logger_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("logger-service")
+              [[ "${{ steps.changed-files.outputs.recommendation_service_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("recommendation-service")
+              [[ "${{ steps.changed-files.outputs.api_gateway_any_changed }}" == "true" ]] && BACKEND_SERVICES+=("api-gateway")
+
+              [[ "${{ steps.changed-files.outputs.user_ui_any_changed }}" == "true" ]] && FRONTEND_SERVICES+=("user-ui")
+              [[ "${{ steps.changed-files.outputs.seller_ui_any_changed }}" == "true" ]] && FRONTEND_SERVICES+=("seller-ui")
+              [[ "${{ steps.changed-files.outputs.admin_ui_any_changed }}" == "true" ]] && FRONTEND_SERVICES+=("admin-ui")
             fi
-          done
-
-          # Check which frontend apps changed
-          for key in "${!frontend_apps[@]}"; do
-            if [[ "${{ steps.changed-files.outputs.${key}_any_changed }}" == "true" ]]; then
-              frontend_changed+=("${frontend_apps[$key]}")
-            fi
-          done
-
-          # Create JSON matrices
-          backend_json=$(printf '%s\n' "${backend_changed[@]}" | jq -R . | jq -s .)
-          frontend_json=$(printf '%s\n' "${frontend_changed[@]}" | jq -R . | jq -s .)
-
-          # If workflow_dispatch with force_rebuild, rebuild all
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.force_rebuild }}" == "true" ]]; then
-            backend_json='["auth-service","product-service","order-service","seller-service","admin-service","chatting-service","kafka-service","logger-service","recommendation-service","api-gateway"]'
-            frontend_json='["user-ui","seller-ui","admin-ui"]'
           fi
 
-          # Set outputs
-          echo "backend-matrix=${backend_json}" >> $GITHUB_OUTPUT
-          echo "frontend-matrix=${frontend_json}" >> $GITHUB_OUTPUT
-          echo "has-backend-changes=$([[ ${#backend_changed[@]} -gt 0 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "has-frontend-changes=$([[ ${#frontend_changed[@]} -gt 0 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "changed-backend=${backend_json}" >> $GITHUB_OUTPUT
-          echo "changed-frontend=${frontend_json}" >> $GITHUB_OUTPUT
+          # Create matrix JSON
+          if [ ${#BACKEND_SERVICES[@]} -eq 0 ]; then
+            echo "backend-matrix=[]" >> $GITHUB_OUTPUT
+            echo "has-backend-changes=false" >> $GITHUB_OUTPUT
+            echo "changed-backend=[]" >> $GITHUB_OUTPUT
+          else
+            BACKEND_JSON=$(printf '%s\n' "${BACKEND_SERVICES[@]}" | jq -R . | jq -s -c .)
+            echo "backend-matrix={\"service\":$BACKEND_JSON}" >> $GITHUB_OUTPUT
+            echo "has-backend-changes=true" >> $GITHUB_OUTPUT
+            echo "changed-backend=$BACKEND_JSON" >> $GITHUB_OUTPUT
+          fi
 
-  # Build backend services
+          if [ ${#FRONTEND_SERVICES[@]} -eq 0 ]; then
+            echo "frontend-matrix=[]" >> $GITHUB_OUTPUT
+            echo "has-frontend-changes=false" >> $GITHUB_OUTPUT
+            echo "changed-frontend=[]" >> $GITHUB_OUTPUT
+          else
+            FRONTEND_JSON=$(printf '%s\n' "${FRONTEND_SERVICES[@]}" | jq -R . | jq -s -c .)
+            echo "frontend-matrix={\"service\":$FRONTEND_JSON}" >> $GITHUB_OUTPUT
+            echo "has-frontend-changes=true" >> $GITHUB_OUTPUT
+            echo "changed-frontend=$FRONTEND_JSON" >> $GITHUB_OUTPUT
+          fi
+
+          # Log what will be built
+          echo "Services to build:"
+          echo "Backend: ${BACKEND_SERVICES[@]}"
+          echo "Frontend: ${FRONTEND_SERVICES[@]}"
+
+  # Build only changed backend services in parallel
   build-backend:
     needs: detect-changes
-    runs-on: ubuntu-latest
     if: needs.detect-changes.outputs.has-backend-changes == 'true'
+    runs-on: ubuntu-latest
     strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.backend-matrix) }}
       fail-fast: false
-      matrix:
-        service: ${{ fromJson(needs.detect-changes.outputs.backend-matrix) }}
+      max-parallel: 2
 
     steps:
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get clean
+          df -h
+
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -210,31 +223,100 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ env.DOCKER_PASSWORD }}
 
-      - name: Build and push backend service
+      - name: Check if image exists
+        id: check-image
+        run: |
+          if docker manifest inspect ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Image already exists for ${{ matrix.service }}"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Image does not exist for ${{ matrix.service }}, will build"
+          fi
+
+      - name: Setup build environment
+        if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-backend-changes == 'true'
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.12.3 --activate
+          pnpm install --frozen-lockfile
+          pnpm exec prisma generate
+          npx nx build ${{ matrix.service }}
+
+      - name: Build and push Docker image
+        if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-backend-changes == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./apps/${{ matrix.service }}/Dockerfile.production
+          file: apps/${{ matrix.service }}/Dockerfile
           push: true
-          tags: |
-            ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
-            ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache,mode=max
+          pull: false
+          build-args: |
+            SERVICE_NAME=${{ matrix.service }}
 
-  # Build frontend apps
+      - name: Smoke test built image
+        if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-backend-changes == 'true'
+        run: |
+          docker pull ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
+
+          CONTAINER_NAME="smoke-test-${{ matrix.service }}"
+          docker run -d --name "$CONTAINER_NAME" \
+            -e NODE_ENV=production \
+            -e DATABASE_URL="mongodb://localhost:27017/test" \
+            -e JWT_SECRET="test-secret-for-smoke-test" \
+            -e KAFKA_BROKERS="localhost:9092" \
+            -e IMAGEKIT_PUBLIC_KEY="dummy-public-key-for-smoke-test" \
+            -e IMAGEKIT_SECRET_KEY="dummy-secret-key-for-smoke-test" \
+            -e IMAGEKIT_PRIVATE_KEY="dummy-private-key-for-smoke-test" \
+            -e IMAGEKIT_URL_ENDPOINT="https://ik.imagekit.io/gglobal" \
+            ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest || exit 1
+
+          sleep 10
+
+          if ! docker ps --format "{{.Names}}" | grep -q "^$CONTAINER_NAME$"; then
+            echo "❌ Container $CONTAINER_NAME exited unexpectedly"
+            docker logs "$CONTAINER_NAME" || true
+            docker rm -f "$CONTAINER_NAME" || true
+            exit 1
+          fi
+
+          FATAL_ERRORS=$(docker logs "$CONTAINER_NAME" 2>&1 | grep -iE "(\[FATAL\]|uncaughtException|cannot find module|pnpm: not found|command not found)" | grep -v -iE "(ioredis|redis|kafka|ECONNREFUSED|AggregateError|connection.*refused|imagekit|Missing publicKey)" || true)
+          if [ -n "$FATAL_ERRORS" ]; then
+            echo "❌ Container logs show fatal errors"
+            echo "$FATAL_ERRORS"
+            docker logs "$CONTAINER_NAME"
+            docker rm -f "$CONTAINER_NAME" || true
+            exit 1
+          fi
+
+          echo "✅ Smoke test passed for ${{ matrix.service }}"
+          docker rm -f "$CONTAINER_NAME" || true
+
+  # Build only changed frontend services in parallel
   build-frontend:
     needs: detect-changes
-    runs-on: ubuntu-latest
     if: needs.detect-changes.outputs.has-frontend-changes == 'true'
+    runs-on: ubuntu-latest
     strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.frontend-matrix) }}
       fail-fast: false
-      matrix:
-        app: ${{ fromJson(needs.detect-changes.outputs.frontend-matrix) }}
+      max-parallel: 2
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -245,32 +327,102 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ env.DOCKER_PASSWORD }}
 
-      - name: Build and push frontend app
+      - name: Check if image exists
+        id: check-image
+        run: |
+          if docker manifest inspect ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup build environment
+        if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-frontend-changes == 'true'
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.12.3 --activate
+          pnpm install --frozen-lockfile
+          pnpm exec prisma generate
+          npx nx build ${{ matrix.service }}
+
+      - name: Build and push Docker image
+        if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-frontend-changes == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./apps/${{ matrix.app }}/Dockerfile.production
+          file: apps/${{ matrix.service }}/Dockerfile
           push: true
-          tags: |
-            ${{ env.DOCKER_USERNAME }}/${{ matrix.app }}:latest
-            ${{ env.DOCKER_USERNAME }}/${{ matrix.app }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:buildcache,mode=max
+          pull: false
+
+      - name: Smoke test built image
+        if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-frontend-changes == 'true'
+        run: |
+          docker pull ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
+
+          CONTAINER_NAME="smoke-test-${{ matrix.service }}"
+          docker run -d --name "$CONTAINER_NAME" \
+            -e NODE_ENV=production \
+            -e NEXT_PUBLIC_SERVER_URI="http://localhost:8080" \
+            ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest || exit 1
+
+          sleep 10
+
+          if ! docker ps --format "{{.Names}}" | grep -q "^$CONTAINER_NAME$"; then
+            echo "❌ Container $CONTAINER_NAME exited unexpectedly"
+            docker logs "$CONTAINER_NAME" || true
+            docker rm -f "$CONTAINER_NAME" || true
+            exit 1
+          fi
+
+          if docker logs "$CONTAINER_NAME" 2>&1 | grep -iE "(error|fatal|pnpm: not found|command not found|uncaughtException|cannot find module)" | grep -v -iE "(ioredis|redis|kafka|ECONNREFUSED|AggregateError|connection.*refused)"; then
+            echo "❌ Container logs show errors"
+            docker logs "$CONTAINER_NAME"
+            docker rm -f "$CONTAINER_NAME" || true
+            exit 1
+          fi
+
+          echo "✅ Smoke test passed for ${{ matrix.service }}"
+          docker rm -f "$CONTAINER_NAME" || true
 
   # Deploy to EC2
   deploy-to-ec2:
     needs: [detect-changes, build-backend, build-frontend]
     runs-on: ubuntu-latest
-    if: always() && (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') && (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped')
+    if: >-
+      always() &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
+      (
+        (github.event_name == 'push') ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.force_rebuild == 'true')
+      ) &&
+      (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
+      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped') &&
+      (
+        needs.detect-changes.outputs.has-backend-changes == 'true' ||
+        needs.detect-changes.outputs.has-frontend-changes == 'true' ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.force_rebuild == 'true')
+      )
 
     steps:
-      - name: Check EC2 connectivity
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: check SSH reachability
+        shell: bash
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          PORT: 22
         run: |
-          HOST="${{ secrets.EC2_HOST }}"
-          PORT="22"
-          echo "Checking if $HOST:$PORT is reachable..."
+          echo "Checking reachability to $HOST:$PORT ..."
           if command -v nc >/dev/null 2>&1; then
-            nc -zv -w 5 "$HOST" "$PORT"
+            nc -zv -w5 "$HOST" "$PORT"
           else
             timeout 5 bash -c "cat < /dev/null > /dev/tcp/$HOST/$PORT"
           fi
@@ -286,67 +438,33 @@ jobs:
           timeout: 60s
           command_timeout: 60m
           script: |
-            # Navigate to app directory
             cd /home/ubuntu/eshop
 
-            # Configure git to use personal access token
             git config --global url."https://${{ secrets.GH_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
-            # Discard local changes to tracked files before pulling
             git reset --hard HEAD
-            # Optionally, clean untracked files except .env
             git clean -fd -e .env
 
-            # Pull latest code
             BRANCH="${{ github.ref_name }}"
             git fetch origin "$BRANCH"
             git checkout -B "$BRANCH" "origin/$BRANCH"
             git reset --hard "origin/$BRANCH"
 
-            # Set environment variables for deployment script
             export DOCKER_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
-
-            # Pass only changed services to deployment script
             export CHANGED_BACKEND='${{ needs.detect-changes.outputs.changed-backend }}'
             export CHANGED_FRONTEND='${{ needs.detect-changes.outputs.changed-frontend }}'
 
-            # If no changes, deploy all (for initial deployment)
             if [ "$CHANGED_BACKEND" == "[]" ] && [ "$CHANGED_FRONTEND" == "[]" ]; then
               export CHANGED_BACKEND='["auth-service","product-service","order-service","seller-service","admin-service","chatting-service","kafka-service","logger-service","recommendation-service","api-gateway"]'
               export CHANGED_FRONTEND='["user-ui","seller-ui","admin-ui"]'
             fi
 
-            # Make script executable and run deployment
             chmod +x scripts/deploy-production.sh
             ./scripts/deploy-production.sh
 
-            # ---- Post-deploy health check (fail CI if site is not actually up) ----
-            # Prefer repo script if you added it; otherwise run minimal inline checks.
-            if [ -f scripts/eshop-postdeploy-check.sh ]; then
-              chmod +x scripts/eshop-postdeploy-check.sh
-              bash scripts/eshop-postdeploy-check.sh nomadnet.shop
-            else
-              echo "== Disk ==" && df -h /
-              USED=$(df -P / | awk 'NR==2{gsub("%","",$5); print $5}')
-              if [ "$USED" -ge 85 ]; then
-                echo "ERROR: Disk usage is ${USED}% (>=85%)"
-                exit 1
-              fi
+            # ✅ Post-deploy checks (fail fast if site is not healthy)
+            bash /usr/local/bin/eshop-postdeploy-check.sh nomadnet.shop
 
-              echo "== Docker service =="
-              systemctl is-active --quiet docker || (echo "ERROR: docker is not active" && exit 1)
-
-              echo "== Containers =="
-              docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-
-              echo "== HTTP/HTTPS =="
-              curl -fsS "http://localhost/" -o /dev/null
-              curl -fsSk "https://localhost/" -o /dev/null
-              curl -fsSk "https://nomadnet.shop/" -o /dev/null || true
-              echo "OK: post-deploy checks passed"
-            fi
-
-  # Deployment summary
   notify-completion:
     needs: [detect-changes, build-backend, build-frontend, deploy-to-ec2]
     runs-on: ubuntu-latest
