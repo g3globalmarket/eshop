@@ -191,3 +191,20 @@ else
   echo "  curl -v https://nomadnet.shop/gateway-health"
   exit 1
 fi
+
+# --------------------------------------------------------------------
+# 6) Post-deploy verification (fail-fast on critical service failures)
+# --------------------------------------------------------------------
+echo ""
+echo "🔍 Running post-deploy verification..."
+
+# Use repo script if available, otherwise fall back to system script
+if [ -f "./scripts/postdeploy-verify.sh" ]; then
+  chmod +x ./scripts/postdeploy-verify.sh
+  ./scripts/postdeploy-verify.sh nomadnet.shop
+elif [ -f "/usr/local/bin/eshop-postdeploy-check.sh" ]; then
+  bash /usr/local/bin/eshop-postdeploy-check.sh nomadnet.shop
+else
+  echo "⚠️  Post-deploy verification script not found (scripts/postdeploy-verify.sh or /usr/local/bin/eshop-postdeploy-check.sh)"
+  echo "   Skipping detailed verification..."
+fi

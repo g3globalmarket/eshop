@@ -461,9 +461,7 @@ jobs:
 
             chmod +x scripts/deploy-production.sh
             ./scripts/deploy-production.sh
-
-            # ✅ Post-deploy checks (fail fast if site is not healthy)
-            bash /usr/local/bin/eshop-postdeploy-check.sh nomadnet.shop
+            # Note: deploy-production.sh now includes post-deploy verification
 
   notify-completion:
     needs: [detect-changes, build-backend, build-frontend, deploy-to-ec2]
