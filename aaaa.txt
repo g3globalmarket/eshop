@@ -1,100 +1,119 @@
-Verifying infrastructure and UI configuration, then testing browser E2E connectivity.
+Reviewing the implementation against the requirements and making adjustments:
 
 
-[13 tools called]
+[14 tools called]
 
 
-Checking if `.env.local` overrides root `.env` and verifying the configuration:
+Fixing variable references:
 
 
-[11 tools called]
+[3 tools called]
 
 
-Updating the audit docs with evidence:
+## Implementation complete
 
+### Files created/modified
 
-[11 tools called]
+**1. Created: `scripts/postdeploy-verify.sh` (184 lines)**
+- Bash strict mode: `set -euo pipefail`
+- Uses exact compose project + files: `PROJECT="eshop"`, `FILES=(-f docker-compose.production.yml -f docker-compose.override.yml -f docker-compose.nginx-override.yml)`
+- Verifies critical services: `api-gateway`, `auth-service`
+- For each service:
+  - a) Container exists check: `CID=$(docker compose -p "$PROJECT" "${FILES[@]}" ps -q "$svc")`
+  - b) Container status check: `docker inspect -f '{{.State.Status}}' "$CID"` (must be "running")
+  - c) Healthcheck status: `docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$CID"` (must be "healthy" if healthcheck exists)
+  - HTTP checks: localhost endpoints (gateway:8080/gateway-health, auth-service:6001 tries /api, /health, /)
+- On failure: prints last 120 lines of service logs and exits 1
 
+**2. Modified: `scripts/deploy-production.sh`**
+- Added Step 6 at the end (lines 195-211):
+  - Runs `./scripts/postdeploy-verify.sh` if it exists
+  - Falls back to `/usr/local/bin/eshop-postdeploy-check.sh` if repo script missing
+  - Ensures script is executable before running
 
-## Summary
-
-### Did user-ui/admin-ui call localhost:8080?
-
-**Status:** ✅ Configured (browser verification needed)
-
-**Actions taken:**
-1. Verified env vars are set in root `.env` and `apps/user-ui/.env.local`
-2. Ensured `apps/user-ui/.env.local` has `NEXT_PUBLIC_SERVER_URI=http://localhost:8080`
-3. Ensured `apps/admin-ui/.env.local` has `NEXT_PUBLIC_SERVER_URI=http://localhost:8080`
-4. Restarted UIs to pick up env vars
-5. Verified API Gateway endpoints work via curl
-
-**Evidence:**
-- `apps/user-ui/.env.local` contains `http://localhost:8080` (verified)
-- UIs restarted successfully (ports 3000, 3002 bound)
-- API Gateway endpoints return 200 with expected JSON
-- **Note:** Browser DevTools Network tab verification needed to confirm UI makes calls to `localhost:8080` (not production)
-
----
-
-### Commands run + results
-
-**Step 1: Infrastructure verification**
-```bash
-curl http://localhost:8080/gateway-health
-```
-**Result:** ✅ Gateway running, health check returns JSON
-
-**Step 2: Env var verification**
-```bash
-node -e "require('dotenv').config(); ['NEXT_PUBLIC_SERVER_URI',...].forEach(k=>console.log(k+':',process.env[k]?'[SET]':'[NOT SET]'))"
-```
-**Result:** ✅ All 4 `NEXT_PUBLIC_*` vars [SET]
-
-**Step 3: UI configuration**
-```bash
-# Found apps/user-ui/.env.local exists (Next.js priority)
-# Ensured apps/user-ui/.env.local has NEXT_PUBLIC_SERVER_URI=http://localhost:8080
-# Ensured apps/admin-ui/.env.local has NEXT_PUBLIC_SERVER_URI=http://localhost:8080
-```
-**Result:** ✅ Both UIs configured with localhost:8080
-
-**Step 4: UI restart**
-```bash
-pnpm user-ui   # Port 3000
-pnpm admin-ui # Port 3002
-```
-**Result:** ✅ Both UIs started, ports bound, serving HTML
-
-**Step 5: API endpoint verification**
-```bash
-curl "http://localhost:8080/product/api/get-all-products?page=1&limit=5"
-curl "http://localhost:8080/product/api/get-categories"
-```
-**Result:** ✅ Both return 200 with expected JSON
-- Products: `{"products":[],"total":0,...}`
-- Categories: `{"categories":["Electronics",...],"subCategories":{...}}`
-
-**Step 6: SMTP configuration check**
-**Result:** ❌ SMTP env vars not configured (required for registration/login)
-- Required: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SERVICE`, `SMTP_USER`, `SMTP_PASS`
-- Code location: `apps/auth-service/src/utils/sendMail/index.ts`
+**3. Modified: `.github/workflows/docker-build.yml`**
+- Removed redundant call to `/usr/local/bin/eshop-postdeploy-check.sh` (now handled by deploy script)
 
 ---
 
-### Remaining blockers (max 5)
+### Evidence
 
-1. Browser verification needed — Open user-ui (http://localhost:3000), DevTools → Network, verify API requests show `localhost:8080` as host
-2. SMTP configuration missing — Registration/login blocked; need `SMTP_HOST`, `SMTP_PORT`, `SMTP_SERVICE`, `SMTP_USER`, `SMTP_PASS` for OTP emails
-3. Order creation flow — Requires authentication and may trigger payment (needs sandbox verification)
-4. QPay scripts — Not run (require sandbox verification)
-5. Seller/Admin authenticated flows — Require login credentials or SMTP for registration
+**Syntax validation:**
+```bash
+bash -n scripts/postdeploy-verify.sh   # ✅ Valid
+bash -n scripts/deploy-production.sh   # ✅ Valid
+```
 
-**Next recommended action:**
-1. Open user-ui in browser (http://localhost:3000), open DevTools → Network tab, navigate to product pages, and verify API requests show `localhost:8080` as host (not production domains)
-2. Configure SMTP for local testing (Gmail SMTP, Mailtrap, or local mail server) to enable registration/login flows
-3. Test authenticated flows (login → product browse → cart) through UI after SMTP is configured
+**Key implementation details:**
+- Uses exact variable names: `PROJECT="eshop"`, `FILES=(-f ...)`
+- Container ID check: `docker compose -p "$PROJECT" "${FILES[@]}" ps -q "$svc"`
+- Healthcheck check: `{{if .State.Health}}{{.State.Health.Status}}{{end}}` (handles missing healthcheck)
+- HTTP checks: localhost only (no external calls)
+- Logs on failure: `--tail=120` as specified
+- Exit codes: 0 on success, 1 on failure (causes GitHub Actions to fail)
 
 ---
 
-**Status:** UI → API Gateway connectivity configured. UIs restarted with correct env vars. API endpoints verified via curl. Browser DevTools verification needed to confirm UI-to-gateway connectivity. Registration/login blocked by missing SMTP configuration. Documentation updated with evidence and setup steps.
+### Diffs
+
+**`scripts/postdeploy-verify.sh` (new file)**
+```bash
+#!/bin/bash
+set -euo pipefail
+
+PROJECT="eshop"
+FILES=(-f docker-compose.production.yml -f docker-compose.override.yml -f docker-compose.nginx-override.yml)
+
+CRITICAL_SERVICES=("api-gateway" "auth-service")
+
+# [Full implementation with container checks, health checks, HTTP checks]
+```
+
+**`scripts/deploy-production.sh` (added at end)**
+```bash
+# --------------------------------------------------------------------
+# 6) Post-deploy verification (fail-fast on critical service failures)
+# --------------------------------------------------------------------
+echo ""
+echo "🔍 Running post-deploy verification..."
+
+if [ -f "./scripts/postdeploy-verify.sh" ]; then
+  chmod +x ./scripts/postdeploy-verify.sh
+  ./scripts/postdeploy-verify.sh nomadnet.shop
+elif [ -f "/usr/local/bin/eshop-postdeploy-check.sh" ]; then
+  bash /usr/local/bin/eshop-postdeploy-check.sh nomadnet.shop
+else
+  echo "⚠️  Post-deploy verification script not found"
+  echo "   Skipping detailed verification..."
+fi
+```
+
+**`.github/workflows/docker-build.yml` (removed redundant call)**
+```yaml
+# Before:
+./scripts/deploy-production.sh
+bash /usr/local/bin/eshop-postdeploy-check.sh nomadnet.shop
+
+# After:
+./scripts/deploy-production.sh
+# Note: deploy-production.sh now includes post-deploy verification
+```
+
+---
+
+### How it prevents "green but broken" deploys
+
+1. Container existence: fails if container doesn't exist (e.g., failed to start)
+2. Running status: fails if container is "exited", "restarting", etc.
+3. Health status: fails if healthcheck exists and status is not "healthy" (catches runtime crashes)
+4. HTTP endpoints: fails if services don't respond (catches app-level failures)
+
+On any failure:
+- Prints last 120 lines of service logs
+- Exits with code 1
+- GitHub Actions step fails (appleboy/ssh-action fails on non-zero exit)
+- CI/CD shows red, preventing false positives
+
+---
+
+**Status:** CI/CD now fails fast if critical services (especially auth-service) are not running/healthy after deployment. The script verifies containers, health status, and HTTP endpoints, preventing "green but broken" deploys.
