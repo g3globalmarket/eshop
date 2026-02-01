@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "apps/seller-ui/src/utils/axiosInstance";
+import { useTranslation } from "apps/seller-ui/src/utils/i18n";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const SidebarItem = ({ icon, title, isActive, href }: Props) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -26,7 +28,7 @@ const SidebarItem = ({ icon, title, isActive, href }: Props) => {
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    if (title === "Logout") {
+    if (title === t("dashboard.logout")) {
       e.preventDefault();
       logoutHandler();
     }

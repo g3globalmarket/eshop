@@ -4,6 +4,7 @@ import BreadCrumbs from "apps/seller-ui/src/shared/components/breadcrumbs";
 import ImagePlaceHolder from "apps/seller-ui/src/shared/components/image-placeholder";
 import axiosInstance from "apps/seller-ui/src/utils/axiosInstance";
 import { isProtected } from "apps/seller-ui/src/utils/protected";
+import { useTranslation } from "apps/seller-ui/src/utils/i18n";
 import { Wand2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ColorSelector from "packages/components/color-selector";
@@ -17,6 +18,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 const Page = () => {
+  const { t } = useTranslation();
   const {
     register,
     control,
@@ -28,19 +30,18 @@ const Page = () => {
   } = useForm();
 
   const { onChange: formOnChange, ...restSlugProps } = register("slug", {
-    required: "Slug is required!",
+    required: t("validation.slugRequired"),
     pattern: {
       value: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      message:
-        "Invalid slug format! Use only lowercase letters, numbers, and dashes (e.g., product-slug).",
+      message: t("validation.slugInvalid"),
     },
     minLength: {
       value: 3,
-      message: "Slug must be at least 3 characters long.",
+      message: t("validation.slugMinLength"),
     },
     maxLength: {
       value: 50,
-      message: "Slug cannot be longer than 50 characters.",
+      message: t("validation.slugMaxLength"),
     },
   });
 
@@ -136,9 +137,9 @@ const Page = () => {
     >
       {/* Heading & Breadcrumbs */}
       <h2 className="text-2xl py-2 font-semibold font-Poppins text-white">
-        Create Product
+        {t("dashboard.createProduct")}
       </h2>
-      <BreadCrumbs title="Create Product" />
+      <BreadCrumbs title={t("dashboard.createProduct")} />
 
       {/* Content Layout */}
       <div className="py-4 w-full flex gap-6">
@@ -176,9 +177,9 @@ const Page = () => {
             {/* Product Title Input */}
             <div className="w-2/4">
               <Input
-                label="Product Title *"
-                placeholder="Enter product title"
-                {...register("title", { required: "Title is required" })}
+                label={`${t("product.title")} *`}
+                placeholder={t("product.titlePlaceholder")}
+                {...register("title", { required: t("validation.titleRequired") })}
               />
               {errors.title && (
                 <p className="text-red-500 text-xs mt-1">
@@ -191,15 +192,15 @@ const Page = () => {
                   type="textarea"
                   rows={7}
                   cols={10}
-                  label="Short Description * (Max 150 words)"
-                  placeholder="Enter product description for quick view"
+                  label={`${t("product.shortDescription")} * (${t("common.maxWords", { count: 150 })})`}
+                  placeholder={t("product.descriptionPlaceholder")}
                   {...register("short_description", {
-                    required: "Description is required",
+                    required: t("validation.descriptionRequired"),
                     validate: (value) => {
                       const wordCount = value.trim().split(/\s+/).length;
                       return (
                         wordCount <= 150 ||
-                        `Description cannot exceed 150 words (Current: ${wordCount})`
+                        t("validation.descriptionMaxWords", { count: 150, current: wordCount })
                       );
                     },
                   })}
@@ -228,7 +229,7 @@ const Page = () => {
 
               <div className="mt-2">
                 <Input
-                  label="Warranty *"
+                  label={`${t("product.warranty")} *`}
                   placeholder="1 Year / No Warranty"
                   {...register("warranty", {
                     required: "Warranty is required!",
@@ -244,7 +245,7 @@ const Page = () => {
               <div className="mt-2">
                 <div className="relative">
                   <Input
-                    label="Slug *"
+                    label={`${t("product.slug")} *`}
                     placeholder="product_slug"
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       setSlugValue(e.target.value);
@@ -263,7 +264,7 @@ const Page = () => {
                         const title = getValues("title");
                         if (!title) {
                           toast.error(
-                            "Please enter a product title to generate a slug!"
+                            t("error.enterTitleForSlug")
                           );
                           return;
                         }
@@ -286,19 +287,15 @@ const Page = () => {
 
                           if (available) {
                             setValue("slug", rawSlug);
-                            toast.success("Slug is available!");
+                            toast.success(t("success.slugAvailable"));
                           } else if (suggestedSlug) {
                             setValue("slug", suggestedSlug);
-                            toast.info(
-                              "Slug not available, suggested new one!"
-                            );
+                            toast.info(t("info.slugNotAvailable"));
                           } else {
-                            toast.error(
-                              "Slug is already taken, try editing it."
-                            );
+                            toast.error(t("error.slugTaken"));
                           }
                         } catch (err) {
-                          toast.error("Failed to validate slug. Try again.");
+                          toast.error(t("error.slugValidationFailed"));
                         }
                       }}
                     />
@@ -314,7 +311,7 @@ const Page = () => {
 
               <div className="mt-2">
                 <Input
-                  label="Brand"
+                  label={t("product.brand")}
                   placeholder="Apple"
                   {...register("brand")}
                 />
@@ -364,24 +361,24 @@ const Page = () => {
             </div>
             <div className="w-2/4">
               <label className="block font-semibold text-gray-300 mb-1">
-                Category *
+                {t("product.category")} *
               </label>
               {isLoading ? (
-                <p className="text-gray-400">Loading categories...</p>
+                <p className="text-gray-400">{t("loading.categories")}</p>
               ) : isError ? (
-                <p className="text-red-500">Failed to load categories</p>
+                <p className="text-red-500">{t("error.loadCategories")}</p>
               ) : (
                 <Controller
                   name="category"
                   control={control}
-                  rules={{ required: "Category is required" }}
+                  rules={{ required: t("validation.categoryRequired") }}
                   render={({ field }) => (
                     <select
                       {...field}
                       className="w-full border outline-none border-gray-700 bg-transparent p-2 rounded-md text-white"
                     >
                       <option value="" className="bg-black">
-                        Select Category
+                        {t("product.selectCategory")}
                       </option>
                       {categories?.map((category: string) => (
                         <option
@@ -404,19 +401,19 @@ const Page = () => {
 
               <div className="mt-2">
                 <label className="block font-semibold text-gray-300 mb-1">
-                  Subcategory *
+                  {t("product.subCategory")} *
                 </label>
                 <Controller
                   name="subCategory"
                   control={control}
-                  rules={{ required: "Subcategory is required" }}
+                  rules={{ required: t("validation.subCategoryRequired") }}
                   render={({ field }) => (
                     <select
                       {...field}
                       className="w-full border outline-none border-gray-700 bg-transparent p-2 rounded-md text-white"
                     >
                       <option value="" className="bg-black">
-                        Select Subcategory
+                        {t("product.selectSubCategory")}
                       </option>
                       {subcategories?.map((subcategory: string) => (
                         <option
@@ -439,23 +436,12 @@ const Page = () => {
 
               <div className="mt-2">
                 <label className="block font-semibold text-gray-300 mb-1">
-                  Detailed Description * (Min 100 words)
+                  {t("product.detailedDescription")}
                 </label>
                 <Controller
                   name="detailed_description"
                   control={control}
-                  rules={{
-                    required: "Detailed description is required!",
-                    validate: (value) => {
-                      const wordCount = value
-                        ?.split(/\s+/)
-                        .filter((word: string) => word).length;
-                      return (
-                        wordCount >= 100 ||
-                        "Description must be at least 100 words!"
-                      );
-                    },
-                  }}
+                  rules={{}}
                   render={({ field }) => (
                     <RichTextEditor
                       value={field.value}
@@ -463,11 +449,6 @@ const Page = () => {
                     />
                   )}
                 />
-                {errors.detailed_description && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.detailed_description.message as string}
-                  </p>
-                )}
               </div>
 
               <div className="mt-2">
@@ -492,7 +473,7 @@ const Page = () => {
 
               <div className="mt-2">
                 <Input
-                  label="Regular Price"
+                  label={t("product.regularPrice")}
                   placeholder="20$"
                   {...register("regular_price", {
                     valueAsNumber: true,
@@ -510,7 +491,7 @@ const Page = () => {
 
               <div className="mt-2">
                 <Input
-                  label="Sale Price *"
+                  label={`${t("product.salePrice")} *`}
                   placeholder="15$"
                   {...register("sale_price", {
                     required: "Sale Price is required",
@@ -534,7 +515,7 @@ const Page = () => {
 
               <div className="mt-2">
                 <Input
-                  label="Stock *"
+                  label={`${t("product.stock")} *`}
                   placeholder="100"
                   {...register("stock", {
                     required: "Stock is required!",
@@ -616,7 +597,7 @@ const Page = () => {
           className="px-4 py-2 bg-blue-600 text-white rounded-md"
           disabled={loading}
         >
-          {loading ? "Creating..." : "Create"}
+          {loading ? t("product.creating") : t("product.create")}
         </button>
       </div>
     </form>

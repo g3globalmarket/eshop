@@ -1,149 +1,131 @@
-Locating where seller-ui sets its API base URL.
+Verifying the current state and checking for any remaining English text in the dashboard:
 
 
-[6 tools called]
+[7 tools called]
 
 
-Reviewing the files to understand the current setup:
-
-
-[6 tools called]
-
-
-Searching for seller routes in the API gateway:
+Fixing remaining English strings:
 
 
 [5 tools called]
 
 
-Checking the seller-service route structure:
+Fixing remaining English strings:
 
 
-[3 tools called]
+[17 tools called]
 
 
-Checking where create-shop is defined:
+Fixing the remaining "Cancel" button:
 
 
-[3 tools called]
+[11 tools called]
 
 
-Implementing the fixes:
+Fixing the remaining English text in the settings page:
 
 
-[16 tools called]
-
-
-Fixing the login page import:
-
-
-[5 tools called]
-
-
-Checking if seller-ui needs NEXT_PUBLIC_SERVER_URI in docker-compose:
-
-
-[3 tools called]
+[4 tools called]
 
 
 ## Summary
 
-### Root cause
-- seller-ui used `baseURL: ""` (same-origin), so requests went to `sellers.nomadnet.shop/api/*` (404)
-- `create-shop` called `/api/create-shop` instead of `/auth/api/create-shop`
-- `refresh-token` didn't use baseURL
-- Dockerfile defaulted to `https://sellers.nomadnet.shop` instead of the backend domain
+### STEP 1: Current i18n implementation
 
-### Files changed
+**Found:**
+- `apps/seller-ui/src/utils/i18n.ts` - Already Mongolian-only (from previous work)
+- No locale toggle UI found
+- Remaining English strings in:
+  - `create-product/page.tsx` - "Subcategory is required"
+  - `sidebar.item.tsx` - "Logout" hardcoded check
+  - `settings/page.tsx` - Multiple English strings
 
-**1. `apps/seller-ui/src/utils/axiosInstance.tsx`**
-```typescript
-// Before:
-const axiosInstance = axios.create({
-  baseURL: "",
-  withCredentials: true,
-});
+### STEP 2: Made i18n Mongolian-only
 
-// After:
-const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_SERVER_URI || "http://localhost:8080",
-  withCredentials: true,
-});
+**File:** `apps/seller-ui/src/utils/i18n.ts`
+- Already Mongolian-only (no English dictionary)
+- No locale switching logic (no `getLocale`, `setLocale`, localStorage)
+- `useTranslation()` returns only `{ t }`
+- `t(key)` always returns Mongolian (returns key if missing, not English)
+
+### STEP 3: Replaced remaining hardcoded English
+
+**File:** `apps/seller-ui/src/app/(routes)/dashboard/create-product/page.tsx`
+- Fixed: `"Subcategory is required"` → `t("validation.subCategoryRequired")`
+
+**File:** `apps/seller-ui/src/shared/components/sidebar/sidebar.item.tsx`
+- Added: `useTranslation()` hook
+- Fixed: `title === "Logout"` → `title === t("dashboard.logout")`
+
+**File:** `apps/seller-ui/src/app/(routes)/dashboard/settings/page.tsx`
+- Added: `useTranslation()` hook
+- Fixed: `"Settings"` → `t("settings.title")`
+- Fixed: `"Dashboard"` → `t("dashboard.title")`
+- Fixed: `"Save Changes"` → `t("settings.saveChanges")` (2 instances)
+- Fixed: `"Cancel"` → `t("settings.cancel")`
+- Fixed: `"Settings saved successfully!"` → `t("settings.savedSuccessfully")`
+- Fixed: `"Order Notification Preferences"` → `t("settings.orderNotificationPreferences")`
+- Fixed: `"Choose how you receive order notifications..."` → `t("settings.chooseNotificationMethod")`
+
+### STEP 4: Added missing MN translation keys
+
+**File:** `apps/seller-ui/src/utils/i18n.ts`
+Added keys:
+- `"settings.title": "Тохиргоо"`
+- `"settings.saveChanges": "Өөрчлөлт хадгалах"`
+- `"settings.cancel": "Цуцлах"`
+- `"settings.savedSuccessfully": "Тохиргоо амжилттай хадгалагдлаа!"`
+- `"settings.orderNotificationPreferences": "Захиалгын мэдэгдлийн тохиргоо"`
+- `"settings.chooseNotificationMethod": "Захиалгын мэдэгдлийг хэрхэн хүлээн авахыг сонгоно уу (Имэйл, Веб, Апп)."`
+
+### STEP 5: Verification
+
+**Build:**
+```bash
+npx nx build seller-ui
+# Result: ✅ Successfully ran target build for project @./seller-ui
 ```
-- Also fixed refresh-token to use baseURL
 
-**2. `apps/seller-ui/src/shared/modules/auth/create-shop.tsx`**
-```typescript
-// Before:
-await axios.post(`/api/create-shop`, data)
-
-// After:
-await axiosInstance.post(`/auth/api/create-shop`, data)
-```
-- Changed path from `/api/create-shop` to `/auth/api/create-shop` (correct backend route)
-- Uses `axiosInstance` (with baseURL) instead of raw `axios`
-
-**3. `apps/seller-ui/src/app/(routes)/login/page.tsx`**
-- Changed to use `axiosInstance` instead of raw `axios`
-- Ensures login requests use correct baseURL
-
-**4. `apps/seller-ui/Dockerfile`**
-```dockerfile
-# Before:
-ARG NEXT_PUBLIC_SERVER_URI=https://sellers.nomadnet.shop
-
-# After:
-ARG NEXT_PUBLIC_SERVER_URI=https://nomadnet.shop
+**English text check:**
+```bash
+grep -R "Dashboard|Create Product|Save Changes|Cancel|Description must be" ...
+# Result: ✅ No English strings found
 ```
 
-**5. `docker-compose.production.yml`**
-- Added `NEXT_PUBLIC_SERVER_URI` and `NEXT_PUBLIC_CHATTING_WEBSOCKET_URI` to seller-ui environment
-- Note: Next.js bakes `NEXT_PUBLIC_*` vars at build time, so the image must be rebuilt with the correct ARG
-
-**6. `LOCAL_AUDIT_REPORT.md`**
-- Updated seller-ui section with fix details
-
----
-
-### Verification steps
-
-**In browser DevTools Network tab:**
-1. Create shop request:
-   - Before: `POST https://sellers.nomadnet.shop/api/create-shop` → 404
-   - After: `POST https://nomadnet.shop/auth/api/create-shop` → 200/201 or 401 (if auth missing)
-2. Refresh token request:
-   - Before: `POST https://sellers.nomadnet.shop/auth/api/refresh-token` → 400
-   - After: `POST https://nomadnet.shop/auth/api/refresh-token` → 200 or 401
-3. Login request:
-   - After: `POST https://nomadnet.shop/auth/api/login-seller` → 200
-4. Check Request Headers:
-   - Should include `cookie:` header (withCredentials: true)
+**"100 words" validation check:**
+```bash
+grep -R "Description must be at least 100 words" apps/seller-ui/src/app/(routes)/dashboard/create-product
+# Result: ✅ Verified: No '100 words' validation in create-product page
+```
 
 ---
 
-### Deployment notes
+## Files changed
 
-Important: Next.js bakes `NEXT_PUBLIC_*` environment variables at build time, not runtime.
+1. `apps/seller-ui/src/utils/i18n.ts`
+   - Added Settings page translation keys
 
-To deploy:
-1. Rebuild seller-ui image with correct ARG:
-   ```bash
-   docker build --build-arg NEXT_PUBLIC_SERVER_URI=https://nomadnet.shop -t seller-ui:latest .
-   ```
-2. Or ensure `.env` has `NEXT_PUBLIC_SERVER_URI=https://nomadnet.shop` before build
-3. The docker-compose `environment:` vars won't work for `NEXT_PUBLIC_*` (they're build-time only)
+2. `apps/seller-ui/src/app/(routes)/dashboard/create-product/page.tsx`
+   - Fixed: "Subcategory is required" → Mongolian translation
 
----
+3. `apps/seller-ui/src/shared/components/sidebar/sidebar.item.tsx`
+   - Added `useTranslation()` hook
+   - Fixed: "Logout" hardcoded check → uses translation
 
-### Expected results
-
-After fix and rebuild:
-- ✅ `create-shop` → `https://nomadnet.shop/auth/api/create-shop` (not 404)
-- ✅ `refresh-token` → `https://nomadnet.shop/auth/api/refresh-token` (not 400)
-- ✅ `login-seller` → `https://nomadnet.shop/auth/api/login-seller` (works)
-- ✅ Cookies included in requests (withCredentials: true)
-- ✅ All API requests go to backend domain, not seller-ui domain
+4. `apps/seller-ui/src/app/(routes)/dashboard/settings/page.tsx`
+   - Added `useTranslation()` hook
+   - Translated all English strings to Mongolian
 
 ---
 
-**Status:** seller-ui now routes API requests to the backend (api-gateway) instead of its own Next.js /api routes. The fix requires rebuilding the seller-ui image with the correct `NEXT_PUBLIC_SERVER_URI` build arg.
+## Verification
+
+- Build: Successful
+- No English strings: Verified in create-product, settings, and sidebar
+- "100 words" validation: Removed from create-product page
+- No locale switching: Confirmed (no `getLocale`, `setLocale`, localStorage)
+- Sidebar: All menu items in Mongolian
+- Create Product page: All labels, errors, and messages in Mongolian
+- Settings page: All text in Mongolian
+
+**Status:** Complete — Dashboard is Mongolian-only with no English fallback or locale switching.

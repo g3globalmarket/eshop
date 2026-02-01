@@ -17,10 +17,12 @@ import CustomDomains from "apps/seller-ui/src/shared/modules/settings";
 import WithdrawMethod from "apps/seller-ui/src/shared/modules/settings/withdraw-method";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "apps/seller-ui/src/utils/axiosInstance";
+import { useTranslation } from "apps/seller-ui/src/utils/i18n";
 import toast from "react-hot-toast";
 import useSeller from "apps/seller-ui/src/hooks/useSeller";
 
 const SettingsPage = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("general");
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -75,7 +77,7 @@ const SettingsPage = () => {
 
   const onSubmit = (data: any) => {
     console.log("Settings Updated:", data);
-    alert("Settings saved successfully!");
+    alert(t("settings.savedSuccessfully"));
   };
 
   // Toggle Sections (Prevents accidental collapse when clicking inputs)
@@ -95,13 +97,13 @@ const SettingsPage = () => {
   return (
     <div className="w-full min-h-screen p-8">
       {/* Header & Breadcrumbs */}
-      <h2 className="text-2xl text-white font-semibold">Settings</h2>
+      <h2 className="text-2xl text-white font-semibold">{t("settings.title")}</h2>
       <div className="flex items-center mb-6">
         <a href="/dashboard" className="text-blue-400 cursor-pointer">
-          Dashboard
+          {t("dashboard.title")}
         </a>
         <ChevronRight size={20} className="text-gray-200" />
-        <span className="text-white">Settings</span>
+        <span className="text-white">{t("settings.title")}</span>
       </div>
 
       {/* Tabs Navigation */}
@@ -173,7 +175,7 @@ const SettingsPage = () => {
                   type="submit"
                   className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
                 >
-                  <Save size={18} /> Save Changes
+                  <Save size={18} /> {t("settings.saveChanges")}
                 </button>
               </form>
             )}
@@ -189,11 +191,10 @@ const SettingsPage = () => {
                 <Shield size={22} className="text-yellow-400" />
                 <div>
                   <h3 className="text-white font-semibold">
-                    Order Notification Preferences
+                    {t("settings.orderNotificationPreferences")}
                   </h3>
                   <p className="text-gray-400 text-sm">
-                    Choose how you receive order notifications (Email, Web,
-                    App).
+                    {t("settings.chooseNotificationMethod")}
                   </p>
                 </div>
               </div>
@@ -225,7 +226,7 @@ const SettingsPage = () => {
                   type="submit"
                   className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
                 >
-                  <Save size={18} /> Save Changes
+                  <Save size={18} /> {t("settings.saveChanges")}
                 </button>
               </form>
             )}
@@ -296,7 +297,7 @@ const SettingsPage = () => {
                 onClick={() => setShowDeleteModal(false)}
                 className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-md text-white transition"
               >
-                Cancel
+                {t("settings.cancel")}
               </button>
               <button
                 className={`${
