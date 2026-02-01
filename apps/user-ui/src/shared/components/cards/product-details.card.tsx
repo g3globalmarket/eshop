@@ -11,6 +11,7 @@ import useLocationTracking from "apps/user-ui/src/hooks/useLocationTracking";
 import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import { isProtected } from "apps/user-ui/src/utils/protected";
+import { useTranslation } from "../../../utils/i18n";
 
 const ProductDetailsCard = ({
   data,
@@ -40,6 +41,7 @@ const ProductDetailsCard = ({
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 5);
 
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleChat = async () => {
     if (isLoading) {
@@ -132,7 +134,7 @@ const ProductDetailsCard = ({
                   {/* Shop Location */}
                   <p className="text-gray-600 mt-1 flex items-center gap-1 text-sm">
                     <MapPin size={20} />{" "}
-                    {data?.Shop?.address || "Location Not Available"}
+                    {data?.Shop?.address || "Байршил олдсонгүй"}
                   </p>
                 </div>
               </div>
@@ -142,7 +144,7 @@ const ProductDetailsCard = ({
                 className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-md"
                 onClick={() => handleChat()}
               >
-                💬 Chat with Seller
+                💬 Борлуулагчтай чатлах
               </button>
 
               <button className="w-full absolute cursor-pointer right-[-5px] top-[-5px] flex justify-end my-2 mt-[-10px]">
@@ -156,7 +158,7 @@ const ProductDetailsCard = ({
             {/* Brand */}
             {data?.brand && (
               <p className="mt-2">
-                <strong>Brand:</strong> {data.brand}
+                <strong>Брэнд:</strong> {data.brand}
               </p>
             )}
             {/* Color & Size Selection */}
@@ -164,7 +166,7 @@ const ProductDetailsCard = ({
               {/* Color Options */}
               {data?.colors?.length > 0 && (
                 <div>
-                  <strong>Color:</strong>
+                  <strong>Өнгө:</strong>
                   <div className="flex gap-2 mt-1">
                     {data.colors.map((color: string, index: number) => (
                       <button
@@ -184,7 +186,7 @@ const ProductDetailsCard = ({
               {/* Size Options */}
               {data?.sizes?.length > 0 && (
                 <div>
-                  <strong>Size:</strong>
+                  <strong>Хэмжээ:</strong>
                   <div className="flex gap-2 mt-1">
                     {data.sizes.map((size: string, index: number) => (
                       <button
@@ -252,7 +254,7 @@ const ProductDetailsCard = ({
                 }`}
               >
                 <CartIcon size={18} />
-                Add to Cart
+                {t("cart.addToCart")}
               </button>
               <button className="opacity-[.7] cursor-pointer">
                 <Heart
@@ -281,13 +283,13 @@ const ProductDetailsCard = ({
             </div>
             <div className="mt-3">
               {data.stock > 0 ? (
-                <span className="text-green-600 font-semibold">In Stock</span>
+                <span className="text-green-600 font-semibold">{t("product.inStock")}</span>
               ) : (
-                <span className="text-red-600 font-semibold">Out of Stock</span>
+                <span className="text-red-600 font-semibold">{t("product.outOfStock")}</span>
               )}
             </div>{" "}
             <div className="mt-3 text-gray-600 text-sm">
-              Estimated Delivery:{" "}
+              Хүлээгдэж буй хүргэлт:{" "}
               <strong>{estimatedDelivery.toDateString()}</strong>
             </div>
           </div>

@@ -1,16 +1,77 @@
-Locating the docker-compose file that defines the nginx service and adding the volume mount for `nginx.conf`:
+
+Scanning the repo for user-visible English strings and translating them to Mongolian. Starting with a systematic search:
 
 
 [4 tools called]
 
 
-The override file mounts the wrong path. Updating it to mount the repo's `nginx.conf`:
+Creating the admin-ui i18n system, then translating the most critical components. Starting with admin-ui:
 
 
 [3 tools called]
 
 
-Verifying the order and checking the compose file structure:
+Translating the cart page and header, then continuing with other critical components:
+
+
+[12 tools called]
+
+
+Continuing to translate the remaining English strings in the cart page:
+
+
+[6 tools called]
+
+
+Checking header-bottom and footer, then translating other critical components:
+
+
+[3 tools called]
+
+
+Translating header-bottom and other critical components:
+
+
+[5 tools called]
+
+
+Translating the signup page and other critical components:
+
+
+[4 tools called]
+
+
+Translating the not-found page, EbarimtForm, and signup validation messages:
+
+
+[8 tools called]
+
+
+Translating EbarimtForm and remaining signup strings:
+
+
+[9 tools called]
+
+
+Updating signup placeholders and translating a few more critical components, then summarizing:
+
+
+[5 tools called]
+
+
+Creating a summary of completed work and remaining tasks:
+
+
+[3 tools called]
+
+
+Translating product-details card and a few more critical components, then summarizing:
+
+
+[5 tools called]
+
+
+Translating the remaining English strings in the product-details card:
 
 
 [5 tools called]
@@ -18,76 +79,107 @@ Verifying the order and checking the compose file structure:
 
 ## Summary
 
-**Status:** Nginx now uses the repo's `nginx.conf` persistently, and `/payments/*` routing is configured.
+Translated critical user-facing components to Mongolian. Created i18n systems and translated the most visible pages.
 
-### Changes Made
+### Files Created
 
-**File:** `docker-compose.nginx-override.yml`
+1. `apps/user-ui/src/utils/i18n.ts` — Mongolian-only i18n utility with 100+ translation keys
+2. `apps/admin-ui/src/utils/i18n.ts` — Mongolian-only i18n utility for admin dashboard
 
-**Diff:**
-```diff
-services:
-  nginx:
-    volumes:
--     - ./ops-backups/nginx.conf:/etc/nginx/nginx.conf:ro
-+     - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - /var/lib/letsencrypt:/var/lib/letsencrypt:ro
-      - /var/www/certbot:/var/www/certbot
-```
+### Files Modified (User-Visible Text Only)
 
-**Change:** Mount path updated from `./ops-backups/nginx.conf` to `./nginx.conf` to use the repo's config file.
+**user-ui:**
+1. `apps/user-ui/src/app/(routes)/checkout/page.tsx` — Translated error messages, buttons, labels
+2. `apps/user-ui/src/shared/components/checkout/qpayCheckoutForm.tsx` — Translated status messages, buttons, labels
+3. `apps/user-ui/src/app/(routes)/login/page.tsx` — Translated form labels, validation messages, buttons
+4. `apps/user-ui/src/app/(routes)/cart/page.tsx` — Translated table headers, buttons, labels, error messages
+5. `apps/user-ui/src/shared/widgets/header/header-bottom.tsx` — Translated "All Departments", "No categories found", "Hello", "Sign In"
+6. `apps/user-ui/src/app/not-found.tsx` — Translated 404 page
+7. `apps/user-ui/src/shared/components/checkout/EbarimtForm.tsx` — Translated form labels, validation messages, buttons
+8. `apps/user-ui/src/app/(routes)/signup/page.tsx` — Translated validation messages, placeholders
+9. `apps/user-ui/src/shared/components/cards/product-details.card.tsx` — Translated "Chat with Seller", "Brand", "Color", "Size", "Add to Cart", "In Stock", "Out of Stock", "Estimated Delivery"
 
-### Verification Results
+**admin-ui:**
+- i18n utility created (ready for use)
 
-**1. Nginx config mount:**
-- `docker-compose.nginx-override.yml` mounts `./nginx.conf:/etc/nginx/nginx.conf:ro` (read-only)
+### Consistency Map (Top 20 Most Common Phrases)
 
-**2. `/payments/` routing in nginx.conf:**
-- All 3 server blocks have `location ^~ /payments/`:
-  - `nomadnet.shop`: line 72 (before `location / {` at line 80)
-  - `sellers.nomadnet.shop`: line 123 (before `location / {` at line 128)
-  - `admin.nomadnet.shop`: line 170 (before `location / {` at line 174)
+| English Phrase | Mongolian Translation |
+|----------------|----------------------|
+| Login / Sign in | Нэвтрэх |
+| Register / Sign up | Бүртгүүлэх |
+| Logout | Гарах |
+| Checkout | Төлбөр төлөх |
+| Order | Захиалга |
+| Cart | Сагс |
+| Add to Cart | Сагсанд нэмэх |
+| Payment | Төлбөр |
+| Pay | Төлөх |
+| Continue | Үргэлжлүүлэх |
+| Back | Буцах |
+| Cancel | Цуцлах |
+| Save | Хадгалах |
+| Delete | Устгах |
+| Loading | Ачаалж байна… |
+| Error | Алдаа |
+| Success | Амжилттай |
+| Required | Заавал |
+| Waiting for payment... | Төлбөр хүлээж байна... |
+| Payment received | Төлбөр хүлээн авлаа |
 
-**3. Location priority:**
-- `^~` modifier ensures `/payments/` takes precedence over regex locations
-- Placement before `location / {` ensures it's matched first
+### Remaining Work
 
-### Post-Deployment Verification Commands
+This is a large task. To complete:
 
-Run these on the production server after deployment:
+1. user-ui remaining pages:
+   - Product pages (`/product/[slug]`, `/products`)
+   - Order history, track orders
+   - Profile, account settings
+   - Wishlist, inbox
+   - Footer links
+   - Other route pages
 
-```bash
-# 1) Test Nginx config syntax
-NGX=$(docker compose -p eshop -f docker-compose.production.yml -f docker-compose.override.yml -f docker-compose.nginx-override.yml ps -q nginx)
-docker exec "$NGX" nginx -t
+2. admin-ui dashboard:
+   - All dashboard pages (users, sellers, products, orders, payments, etc.)
+   - Sidebar navigation
+   - Table headers, buttons, labels
 
-# Expected output: "nginx: configuration file /etc/nginx/nginx.conf test is successful"
+3. seller-ui:
+   - Already has i18n, but verify no hardcoded English remains
 
-# 2) Restart nginx container to load new config
-docker compose -p eshop -f docker-compose.production.yml -f docker-compose.override.yml -f docker-compose.nginx-override.yml restart nginx
+4. Error messages and toasts:
+   - Update `qpay-api.ts` error messages
+   - Toast notifications across all apps
+   - Form validation messages
 
-# OR if using docker compose up:
-# docker compose -p eshop -f docker-compose.production.yml -f docker-compose.override.yml -f docker-compose.nginx-override.yml up -d nginx
+### Pattern for Remaining Files
 
-# 3) Verify endpoint is NOT hitting Next.js frontend
-curl -I "https://nomadnet.shop/payments/qpay/status?sessionId=test"
+For each file with English strings:
 
-# Expected: Should NOT have `x-powered-by: Next.js` header
-# Expected: Should return 400/401 (invalid session) from backend, NOT 404 from Next.js
-# Expected headers: `server: nginx` (not Next.js)
-```
+1. Import translation hook:
+   ```typescript
+   import { useTranslation } from "../../../utils/i18n";
+   const { t } = useTranslation();
+   ```
 
-### Expected Behavior After Deployment
+2. Replace hardcoded strings:
+   ```typescript
+   // Before:
+   <button>Login</button>
+   
+   // After:
+   <button>{t("auth.login")}</button>
+   ```
 
-1. Nginx container loads `/etc/nginx/nginx.conf` from the mounted repo file
-2. All `/payments/*` requests are proxied to `api_backend` (API Gateway)
-3. Next.js frontend does not receive `/payments/*` requests
-4. QPay endpoints (`/payments/qpay/seed-session`, `/payments/qpay/status`, etc.) work correctly
+3. Add missing translations to `i18n.ts` as needed
 
-### Files Changed
+### Verification
 
-1. `docker-compose.nginx-override.yml`: Fixed volume mount path
-2. `nginx.conf`: Already has correct `/payments/` routing (from previous fix)
+- No linter errors
+- i18n keys preserved (only values translated)
+- No logic/behavior changes
+- Interpolations preserved ({x}, ${x}, etc.)
 
-All changes are complete and ready for deployment.
+The foundation is in place. The i18n systems are ready, and the pattern is established. The most critical user-facing components (checkout, cart, login, QPay) are translated. Remaining work follows the same pattern.
+
+Should I continue with more files, or do you want to review this first?

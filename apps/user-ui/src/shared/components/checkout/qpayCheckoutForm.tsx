@@ -15,6 +15,7 @@ import {
   cancelQPayPayment,
   type QPayPaymentStatus,
 } from "../../../utils/qpay-api";
+import { useTranslation } from "../../../utils/i18n";
 
 const QPayCheckoutForm = ({
   initialSessionId,
@@ -38,9 +39,10 @@ const QPayCheckoutForm = ({
   cartItems: any[];
   coupon: any;
 }) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const [status, setStatus] = useState<QPayPaymentStatus>("PENDING");
-  const [statusText, setStatusText] = useState("Waiting for payment...");
+  const [statusText, setStatusText] = useState(t("qpay.waitingForPayment"));
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [polling, setPolling] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -62,28 +64,28 @@ const QPayCheckoutForm = ({
   useEffect(() => {
     switch (status) {
       case "PENDING":
-        setStatusText("Waiting for payment...");
+        setStatusText(t("qpay.waitingForPayment"));
         break;
       case "PAID":
-        setStatusText("Payment received. Processing order...");
+        setStatusText(t("qpay.paymentReceived"));
         break;
       case "PROCESSED":
-        setStatusText("Order created! Redirecting...");
+        setStatusText(t("qpay.orderCreated"));
         break;
       case "FAILED":
-        setStatusText("Payment failed");
+        setStatusText(t("qpay.paymentFailed"));
         break;
       case "CANCELLED":
-        setStatusText("Payment cancelled");
+        setStatusText(t("qpay.paymentCancelled"));
         break;
       case "EXPIRED":
-        setStatusText("Session expired");
+        setStatusText(t("qpay.sessionExpired"));
         break;
       case "SESSION_NOT_FOUND":
-        setStatusText("Session not found");
+        setStatusText(t("qpay.sessionNotFound"));
         break;
     }
-  }, [status]);
+  }, [status, t]);
 
   // Handle cancel payment
   const handleCancelPayment = async () => {
@@ -95,7 +97,7 @@ const QPayCheckoutForm = ({
 
     // Confirm cancellation
     const confirmed = window.confirm(
-      "Are you sure you want to cancel this payment? You can start a new payment from your cart."
+      t("qpay.confirmCancel")
     );
 
     if (!confirmed) {
@@ -114,7 +116,7 @@ const QPayCheckoutForm = ({
       console.info("[QPay] Payment cancelled by user", { sessionId });
     } catch (error: any) {
       console.error("[QPay] Failed to cancel payment:", error);
-      setErrorMsg(error.message || "Failed to cancel payment");
+      setErrorMsg(error.message || t("qpay.cancelFailed"));
     } finally {
       setCancelling(false);
     }
@@ -139,7 +141,7 @@ const QPayCheckoutForm = ({
 
     if (!sessionId) {
       setStatus("FAILED");
-      setErrorMsg("Missing session ID. Please try again.");
+      setErrorMsg(t("error.generic"));
       setPolling(false);
       return;
     }
@@ -156,7 +158,7 @@ const QPayCheckoutForm = ({
       // Stop polling if max time exceeded
       if (Date.now() - pollStartTime.current > maxPollTime) {
         setStatus("FAILED");
-        setErrorMsg("Payment timeout. Please try again.");
+        setErrorMsg(t("error.generic"));
         setPolling(false);
         return;
       }
@@ -192,16 +194,16 @@ const QPayCheckoutForm = ({
           }, 1500);
         } else if (result.status === "SESSION_NOT_FOUND") {
           setPolling(false);
-          setErrorMsg("Session expired or not found. Please try again.");
+          setErrorMsg(t("qpay.sessionNotFound"));
         } else if (result.status === "FAILED") {
           setPolling(false);
-          setErrorMsg(result.error || "Payment failed");
+          setErrorMsg(result.error || t("qpay.paymentFailed"));
         } else if (result.status === "CANCELLED") {
           setPolling(false);
-          setErrorMsg("Payment was cancelled");
+          setErrorMsg(t("qpay.paymentCancelled"));
         } else if (result.status === "EXPIRED") {
           setPolling(false);
-          setErrorMsg("Payment session expired. Please start a new payment.");
+          setErrorMsg(t("qpay.sessionExpired"));
         }
         // If PENDING or PAID, continue polling
       } catch (error: any) {
@@ -229,7 +231,7 @@ const QPayCheckoutForm = ({
   return (
     <div className="flex justify-center items-center min-h-[80vh] px-4 my-10">
       <div className="bg-white w-full max-w-lg p-8 rounded-md shadow space-y-6">
-        <h2 className="text-3xl font-bold text-center mb-2">QPay Payment</h2>
+        <h2 className="text-3xl font-bold text-center mb-2">{t("common.payment")}</h2>
 
         {/* Order Summary */}
         <div className="bg-gray-100 p-4 rounded-md text-sm text-gray-700 space-y-2 max-h-52 overflow-y-auto">
@@ -244,7 +246,7 @@ const QPayCheckoutForm = ({
 
           {!!coupon?.discountAmount && (
             <div className="flex justify-between font-semibold pt-2 border-t border-t-gray-300 mt-2">
-              <span>Discount</span>
+              <span>Хөнгөлөлт</span>
               <span className="text-green-600">
                 ${coupon?.discountAmount?.toFixed(2)}
               </span>
@@ -252,7 +254,7 @@ const QPayCheckoutForm = ({
           )}
 
           <div className="flex justify-between font-semibold mt-2">
-            <span>Total</span>
+            <span>{t("cart.total")}</span>
             <span>${(total - (coupon?.discountAmount || 0)).toFixed(2)}</span>
           </div>
         </div>
@@ -279,11 +281,11 @@ const QPayCheckoutForm = ({
               className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 transition"
             >
               <Copy className="w-4 h-4" />
-              {copied ? "Copied!" : "Copy QR Text"}
+              {copied ? t("qpay.invoiceIdCopied") : t("qpay.copyInvoiceId")}
             </button>
 
             <p className="text-sm text-gray-600 text-center">
-              Scan the QR code with your banking app to complete payment
+              {t("qpay.scanQRCode")}
             </p>
 
             {/* Short URL Link */}
@@ -295,7 +297,7 @@ const QPayCheckoutForm = ({
                 className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 transition"
               >
                 <ExternalLink className="w-4 h-4" />
-                Open in browser
+                {t("qpay.orPayViaBank")}
               </a>
             )}
 
@@ -303,7 +305,7 @@ const QPayCheckoutForm = ({
             {invoiceData.deeplinks && invoiceData.deeplinks.length > 0 && (
               <div className="w-full space-y-2">
                 <p className="text-sm font-semibold text-gray-700 text-center">
-                  Or open with app:
+                  {t("qpay.orPayViaBank")}:
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {invoiceData.deeplinks.map((deeplink, idx) => (
@@ -345,7 +347,7 @@ const QPayCheckoutForm = ({
                 className="w-full mt-4 px-4 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Ban className="w-4 h-4" />
-                {cancelling ? "Cancelling..." : "Cancel Payment"}
+                {cancelling ? t("qpay.cancelling") : t("qpay.cancelPayment")}
               </button>
             )}
           </div>
@@ -356,7 +358,7 @@ const QPayCheckoutForm = ({
           <div className="flex flex-col items-center gap-4">
             <CheckCircle className="w-16 h-16 text-green-500" />
             <p className="text-lg font-semibold text-green-600">{statusText}</p>
-            <p className="text-sm text-gray-600">Taking you to your order...</p>
+            <p className="text-sm text-gray-600">{t("common.loading")}</p>
           </div>
         )}
 
@@ -371,19 +373,19 @@ const QPayCheckoutForm = ({
             {errorMsg && <p className="text-sm text-gray-600">{errorMsg}</p>}
             {status === "CANCELLED" && (
               <p className="text-sm text-gray-600 text-center">
-                You can start a new payment from your cart
+                Сагсаасаа шинэ төлбөр эхлүүлж болно
               </p>
             )}
             {status === "EXPIRED" && (
               <p className="text-sm text-gray-600 text-center">
-                Payment sessions expire after 30 minutes of inactivity
+                Төлбөрийн хуудас 30 минутын идэвхгүй байдлын дараа дуусна
               </p>
             )}
             <button
               onClick={() => router.push("/cart")}
               className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
             >
-              Back to Cart
+              {t("checkout.backToCart")}
             </button>
           </div>
         )}

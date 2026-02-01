@@ -63,7 +63,7 @@ const HeaderBottom = () => {
         >
           <div className="flex items-center gap-2">
             <AlignLeft color="white" />
-            <span className="text-white font-medium">All Departments</span>
+            <span className="text-white font-medium">Бүх ангилал</span>
           </div>
           <ChevronDown color="white" />
         </div>
@@ -129,7 +129,7 @@ const HeaderBottom = () => {
               })
             ) : (
               <p className="px-5 py-4 text-sm text-gray-500">
-                No categories found.
+                Ангилал олдсонгүй.
               </p>
             )}
           </div>
@@ -162,7 +162,7 @@ const HeaderBottom = () => {
                     </Link>
 
                     <Link href={"/profile"}>
-                      <span className="block font-medium">Hello,</span>
+                      <span className="block font-medium">Сайн байна уу,</span>
                       <span className="font-semibold">
                         {user?.name?.split(" ")[0]}
                       </span>
@@ -171,10 +171,10 @@ const HeaderBottom = () => {
                 ) : (
                   <Link href={"/login"}>
                     <span className="block font-[500] opacity-[.6]">
-                      Hello,
+                      Сайн байна уу,
                     </span>
                     <span className="font-[600]">
-                      {isLoading ? "..." : "Sign In"}
+                      {isLoading ? "..." : "Нэвтрэх"}
                     </span>
                   </Link>
                 )}

@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import React, { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import axios, { AxiosError } from "axios";
+import { useTranslation } from "../../../utils/i18n";
 
 type FormData = {
   name: string;
@@ -16,6 +17,7 @@ type FormData = {
 };
 
 const Signup = () => {
+  const { t } = useTranslation();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [canResend, setCanResend] = useState(true);
@@ -150,10 +152,10 @@ const Signup = () => {
               <label className="block text-gray-700 mb-1">Нэр</label>
               <input
                 type="text"
-                placeholder="seller name"
+                placeholder="Нэр оруулах"
                 className="w-full p-2 border border-gray-300 outline-0 !rounded mb-1"
                 {...register("name", {
-                  required: "Name is required",
+                  required: "Нэр шаардлагатай",
                 })}
               />
               {errors.email && (
@@ -169,10 +171,10 @@ const Signup = () => {
                 placeholder="support@nomadnet.com"
                 className="w-full p-2 border border-gray-300 outline-0 !rounded mb-1"
                 {...register("email", {
-                  required: "Email is required",
+                  required: t("auth.emailRequired"),
                   pattern: {
                     value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/,
-                    message: "Invalid email address",
+                    message: "И-мэйл хаяг буруу байна",
                   },
                 })}
               />
@@ -187,13 +189,13 @@ const Signup = () => {
               <div className="relative">
                 <input
                   type={passwordVisible ? "text" : "password"}
-                  placeholder="Min. 6 characters"
+                  placeholder="Хамгийн багадаа 6 тэмдэгт"
                   className="w-full p-2 border border-gray-300 outline-0 !rounded mb-1"
                   {...register("password", {
-                    required: "Password is required",
+                    required: t("auth.passwordRequired"),
                     minLength: {
                       value: 6,
-                      message: "Password must be at least 6 characters",
+                      message: "Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой",
                     },
                   })}
                 />

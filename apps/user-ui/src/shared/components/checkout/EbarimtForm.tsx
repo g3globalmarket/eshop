@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { Receipt } from "lucide-react";
+import { useTranslation } from "../../../utils/i18n";
 
 export interface EbarimtFormData {
   receiverType: string;
@@ -19,6 +20,7 @@ interface EbarimtFormProps {
  * Allows users to optionally request an Ebarimt receipt with their payment
  */
 const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
+  const { t } = useTranslation();
   const [needsEbarimt, setNeedsEbarimt] = useState(false);
   const [formData, setFormData] = useState<EbarimtFormData>({
     receiverType: "CITIZEN",
@@ -57,26 +59,26 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
     if (formData.receiver) {
       const trimmedReceiver = formData.receiver.trim();
       if (trimmedReceiver.length > 20) {
-        newErrors.receiver = "Maximum 20 characters";
+        newErrors.receiver = "Хамгийн ихдээ 20 тэмдэгт";
       }
       // Only allow alphanumeric
       if (!/^[a-zA-Z0-9]*$/.test(trimmedReceiver)) {
-        newErrors.receiver = "Only letters and numbers allowed";
+        newErrors.receiver = "Зөвхөн үсэг болон тоо зөвшөөрөгдөнө";
       }
     }
 
     // District code validation
     const trimmedDistrict = formData.districtCode.trim();
     if (!trimmedDistrict) {
-      newErrors.districtCode = "District code is required";
+      newErrors.districtCode = "Дүүргийн код шаардлагатай";
     } else if (!/^\d+$/.test(trimmedDistrict)) {
-      newErrors.districtCode = "Must be numeric";
+      newErrors.districtCode = "Зөвхөн тоо байх ёстой";
     }
 
     // Classification code validation
     const trimmedClassification = formData.classificationCode.trim();
     if (!trimmedClassification) {
-      newErrors.classificationCode = "Classification code is required";
+      newErrors.classificationCode = "Ангиллын код шаардлагатай";
     }
 
     setErrors(newErrors);
@@ -106,7 +108,7 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
     <div className="bg-white w-full max-w-lg p-8 rounded-md shadow space-y-6">
       <div className="flex items-center gap-3 mb-4">
         <Receipt className="w-6 h-6 text-blue-600" />
-        <h2 className="text-2xl font-bold">Payment Details</h2>
+        <h2 className="text-2xl font-bold">Төлбөрийн мэдээлэл</h2>
       </div>
 
       {/* Ebarimt Checkbox */}
@@ -120,9 +122,9 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
           className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
         />
         <label htmlFor="needsEbarimt" className="flex-1 cursor-pointer">
-          <div className="font-semibold text-gray-900">Need Ebarimt receipt?</div>
+          <div className="font-semibold text-gray-900">Эбаримт баримт хэрэгтэй юу?</div>
           <div className="text-sm text-gray-600 mt-1">
-            Check this if you need a Mongolian tax receipt (Ebarimt) for this purchase
+            Хэрэв та энэ худалдан авалтад Монголын татварын баримт (Эбаримт) хэрэгтэй бол үүнийг сонгоно уу
           </div>
         </label>
       </div>
@@ -131,7 +133,7 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
       {needsEbarimt && (
         <div className="space-y-4 p-4 bg-gray-50 rounded-md border border-gray-200">
           <p className="text-sm text-gray-600 mb-3">
-            Please provide your Ebarimt details:
+            Эбаримтын мэдээлэлээ оруулна уу:
           </p>
 
           {/* Receiver Type */}
@@ -140,7 +142,7 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
               htmlFor="receiverType"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Receiver Type <span className="text-red-500">*</span>
+              Хүлээн авагчийн төрөл <span className="text-red-500">*</span>
             </label>
             <select
               id="receiverType"
@@ -149,8 +151,8 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
               disabled={isLoading}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
             >
-              <option value="CITIZEN">Citizen</option>
-              <option value="ORGANIZATION">Organization</option>
+              <option value="CITIZEN">Иргэн</option>
+              <option value="ORGANIZATION">Байгууллага</option>
             </select>
           </div>
 
@@ -161,9 +163,9 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
               className="block text-sm font-medium text-gray-700 mb-2"
             >
               {formData.receiverType === "CITIZEN"
-                ? "Citizen ID / Registration"
-                : "Company Registration"}
-              <span className="text-gray-500 text-xs ml-2">(Optional)</span>
+                ? "Иргэний регистр / Бүртгэл"
+                : "Байгууллагын бүртгэл"}
+              <span className="text-gray-500 text-xs ml-2">(Сонголттой)</span>
             </label>
             <input
               type="text"
@@ -174,8 +176,8 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
               maxLength={20}
               placeholder={
                 formData.receiverType === "CITIZEN"
-                  ? "e.g. 88614450"
-                  : "e.g. 1234567890"
+                  ? "жишээ: 88614450"
+                  : "жишээ: 1234567890"
               }
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
                 errors.receiver ? "border-red-500" : "border-gray-300"
@@ -185,7 +187,7 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
               <p className="text-red-500 text-xs mt-1">{errors.receiver}</p>
             )}
             <p className="text-xs text-gray-500 mt-1">
-              Leave blank if you don't have a registration number
+              Бүртгэлийн дугаар байхгүй бол хоосон үлдээнэ үү
             </p>
           </div>
 
@@ -195,7 +197,7 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
               htmlFor="districtCode"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Tax District Code <span className="text-red-500">*</span>
+              Татварын дүүргийн код <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -219,7 +221,7 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
               htmlFor="classificationCode"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Product Classification Code <span className="text-red-500">*</span>
+              Бүтээгдэхүүний ангиллын код <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -252,17 +254,17 @@ const EbarimtForm: React.FC<EbarimtFormProps> = ({ onSubmit, isLoading }) => {
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-            Processing...
+            {t("common.loading")}
           </span>
         ) : (
-          "Continue to Payment"
+          t("checkout.title")
         )}
       </button>
 
       {/* Privacy Note */}
       {needsEbarimt && formData.receiver && (
         <p className="text-xs text-gray-500 text-center">
-          🔒 Your registration information is encrypted and stored securely
+          🔒 Таны бүртгэлийн мэдээлэл шифрлэгдсэн бөгөөд аюулгүй хадгалагдана
         </p>
       )}
     </div>

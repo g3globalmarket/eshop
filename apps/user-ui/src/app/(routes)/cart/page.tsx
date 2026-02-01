@@ -11,8 +11,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "../../../utils/i18n";
 
 const CartPage = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useUser();
   const location = useLocationTracking();
@@ -30,8 +32,7 @@ const CartPage = () => {
     setError("");
 
     if (!couponCode.trim()) {
-      // setError("Coupon code is required!");
-      setError("Купон код шаардлагатай!");
+      setError(t("cart.couponCodeRequired"));
       return;
     }
 
@@ -51,10 +52,7 @@ const CartPage = () => {
         setDiscountAmount(0);
         setDiscountPercent(0);
         setDiscountedProductId("");
-        // setError(res.data.message || "Coupon not valid for any items in cart.");
-        setError(
-          res.data.message || "Купон сагсанд байгаа бараанд хүчинтэй биш."
-        );
+        setError(res.data.message || t("cart.invalidCoupon"));
       }
     } catch (error: any) {
       setDiscountAmount(0);
@@ -66,7 +64,6 @@ const CartPage = () => {
 
   const createPaymentSession = async () => {
     if (addresses?.length === 0) {
-      // toast.error("Please set your delivery address to create an order!");
       toast.error("Захиалга үүсгэхийн тулд хүргэлтийн хаягаа тохируулна уу!");
       return;
     }
@@ -88,8 +85,7 @@ const CartPage = () => {
       const sessionId = res.data.sessionId;
       router.push(`/checkout?sessionId=${sessionId}`);
     } catch (error) {
-      // toast.error("Something went wrong. Please try again.");
-      toast.error("Алдаа гарлаа. Дахин оролдоно уу.");
+      toast.error(t("error.generic"));
     } finally {
       setLoading(false);
     }
@@ -148,31 +144,27 @@ const CartPage = () => {
       <div className="md:w-[80%] w-[95%] mx-auto min-h-screen">
         <div className="pb-[50px]">
           <h1 className="md:pt-[50px] font-medium text-[44px] leading-[1] mb-[16px] font-jost">
-            {/* Shopping Cart */}
-            Дэлгүүрийн сагс
+            {t("cart.title")}
           </h1>
           <Link href={"/"} className="text-[#55585b] hover:underline">
-            {/* Home */}
-            Нүүр
+            {t("nav.home")}
           </Link>
           <span className="inline-block p-[1.5px] mx-1 bg-[#a8acb0] rounded-full"></span>
-          {/* <span className="text-[#55585b]">Cart</span> */}
-          <span className="text-[#55585b]">Сагс</span>
+          <span className="text-[#55585b]">{t("cart.title")}</span>
         </div>
 
         {cart.length === 0 ? (
           <div className="text-center text-gray-600 text-lg">
-            {/* Your cart is empty! Start adding products. */}
-            Таны сагс хоосон! Бүтээгдэхүүн нэмж эхлээрэй.
+            {t("cart.empty")}
           </div>
         ) : (
           <div className="lg:flex items-start gap-10">
             <table className="w-full lg:w-[70%] border-collapse">
               <thead className="bg-[#f1f3f4] rounded">
                 <tr>
-                  <th className="py-3 text-left pl-6 align-middle">Product</th>
-                  <th className="py-3 text-center align-middle">Price</th>
-                  <th className="py-3 text-center align-middle">Quantity</th>
+                  <th className="py-3 text-left pl-6 align-middle">Бүтээгдэхүүн</th>
+                  <th className="py-3 text-center align-middle">{t("product.price")}</th>
+                  <th className="py-3 text-center align-middle">Тоо ширхэг</th>
                   <th className="py-3 text-center align-middle"></th>
                 </tr>
               </thead>
@@ -193,7 +185,7 @@ const CartPage = () => {
                           <div className="text-sm text-gray-500">
                             {item?.selectedOptions?.color && (
                               <span>
-                                Color: {}
+                                Өнгө: {}
                                 <span
                                   style={{
                                     backgroundColor:
@@ -208,7 +200,7 @@ const CartPage = () => {
                             )}
                             {item?.selectedOptions.size && (
                               <span className="ml-2">
-                                Size: {item?.selectedOptions?.size}
+                                Хэмжээ: {item?.selectedOptions?.size}
                               </span>
                             )}
                           </div>
@@ -229,7 +221,7 @@ const CartPage = () => {
                             ).toFixed(2)}
                           </span>
                           <span className="text-xs text-green-700 bg-green-100 px-2 py-[2px] rounded-full mt-1">
-                            Discount Applied
+                            Хөнгөлөлт хэрэглэсэн
                           </span>
                         </div>
                       ) : (
@@ -258,7 +250,7 @@ const CartPage = () => {
                         className="text-[#818487] cursor-pointer hover:text-[#ff1826] transition duration-200"
                         onClick={() => removeItem(item?.id)}
                       >
-                        ✕ Remove
+                        ✕ {t("common.delete")}
                       </button>
                     </td>
                   </tr>
@@ -279,28 +271,28 @@ const CartPage = () => {
               )}
 
               <div className="flex justify-between items-center text-[#010f1c] text-[20px] font-[550] pb-3">
-                <span className="font-jost">Subtotal</span>
+                <span className="font-jost">{t("cart.subtotal")}</span>
                 <span>${(subtotal - discountAmount).toFixed(2)}</span>
               </div>
               <hr className="my-4 text-slate-200" />
 
               <div className="mb-4">
                 <h4 className="mb-[7px] font-[500] text-[15px]">
-                  Have a Coupon?
+                  Купон кодтой юу?
                 </h4>
                 <div className="flex">
                   <input
                     type="text"
                     value={couponCode}
                     onChange={(e: any) => setCouponCode(e.target.value)}
-                    placeholder="Enter coupon code"
+                    placeholder="Купон код оруулах"
                     className="w-full p-2 border border-gray-200 rounded-l-md focus:outline-none focus:border-blue-500"
                   />
                   <button
                     className="bg-blue-500 cursor-pointer text-white px-4 rounded-r-md hover:bg-blue-600 transition-all"
                     onClick={() => couponCodeApplyHandler()}
                   >
-                    Apply
+                    {t("cart.applyCoupon")}
                   </button>
                 </div>
                 {error && <p className="text-sm pt-2 text-red-500">{error}</p>}
@@ -330,7 +322,7 @@ const CartPage = () => {
                   )}
                   {addresses?.length === 0 && (
                     <p className="text-sm text-slate-800">
-                      Please add an address from profile to create an order!
+                      Захиалга үүсгэхийн тулд профайлаасаа хаяг нэмнэ үү!
                     </p>
                   )}
                 </div>
@@ -345,14 +337,14 @@ const CartPage = () => {
                   </h4>
 
                   <select className="w-full p-2 border border-gray-200 rounded-md focus:outline-none focus:border-blue-500">
-                    <option value="credit_card">Online Payment</option>
-                    <option value="cash_on_delivery">Cash on Delivery</option>
+                    <option value="credit_card">Онлайн төлбөр</option>
+                    <option value="cash_on_delivery">Хүргэлтийн үеийн бэлэн мөнгө</option>
                   </select>
                 </div>
                 <hr className="my-4 text-slate-200" />
 
                 <div className="flex justify-between items-center text-[#010f1c] text-[20px] font-[550] pb-3">
-                  <span className="font-jost">Total</span>
+                  <span className="font-jost">{t("cart.total")}</span>
                   <span>${(subtotal - discountAmount).toFixed(2)}</span>
                 </div>
 
@@ -362,7 +354,7 @@ const CartPage = () => {
                   className="w-full flex items-center justify-center gap-2 cursor-pointer mt-4 py-3 bg-[#010f1c] text-white hover:bg-[#0989FF] transition-all rounded-lg"
                 >
                   {loading && <Loader2 className="animate-spin w-5 h-5" />}
-                  {loading ? "Redirecting..." : "Proceed to Checkout"}
+                  {loading ? t("common.loading") : t("cart.checkout")}
                 </button>
               </div>
             </div>

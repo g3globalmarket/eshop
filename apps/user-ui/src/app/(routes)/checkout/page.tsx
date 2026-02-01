@@ -9,10 +9,12 @@ import EbarimtForm, {
   type EbarimtFormData,
 } from "apps/user-ui/src/shared/components/checkout/EbarimtForm";
 import { startQPayPayment } from "../../../utils/qpay-api";
+import { useTranslation } from "../../../utils/i18n";
 
 export const dynamic = 'force-dynamic';
 
 const Page = () => {
+  const { t } = useTranslation();
   const [qpaySessionId, setQpaySessionId] = useState<string | null>(null);
   const [qpayInvoice, setQpayInvoice] = useState<any>(null);
   const [cartItems, setCartItems] = useState<any[]>([]);
@@ -218,23 +220,33 @@ const Page = () => {
       console.error("[Checkout] Error details:", errorDetails);
       
       // Provide user-friendly error message based on error type
-      let errorMessage = "Failed to create payment. Please try again.";
+      let errorMessage = t("checkout.failedToCreatePayment");
+      let shouldRedirectToLogin = false;
       
       if (err.response?.status === 404) {
-        errorMessage = "Payment endpoint not found (404). The payment service may be unavailable. Please contact support.";
+        errorMessage = t("checkout.paymentEndpointNotFound");
       } else if (err.response?.status === 401) {
-        errorMessage = "Authentication required. Please log in and try again.";
+        // Authentication required - show clear message and offer to redirect
+        errorMessage = t("checkout.needToLogin");
+        shouldRedirectToLogin = true;
       } else if (err.response?.status === 403) {
-        errorMessage = "Access denied. Please check your account permissions.";
+        errorMessage = t("checkout.accessDenied");
       } else if (err.response?.status >= 500) {
-        errorMessage = "Payment service temporarily unavailable. Please try again in a moment.";
+        errorMessage = t("checkout.serviceUnavailable");
       } else if (err.response?.status === 400) {
-        errorMessage = err.response?.data?.error || err.response?.data?.details || "Invalid payment request. Please check your cart and try again.";
+        errorMessage = err.response?.data?.error || err.response?.data?.details || t("checkout.invalidPaymentRequest");
       } else if (err.message) {
         errorMessage = err.message;
       }
       
       setError(errorMessage);
+      
+      // Redirect to login after a short delay if authentication is required
+      if (shouldRedirectToLogin) {
+        setTimeout(() => {
+          router.push("/login?redirect=/checkout" + (urlSessionId ? `?sessionId=${urlSessionId}` : ""));
+        }, 2000);
+      }
     } finally {
       setCreatingPayment(false);
     }
@@ -249,6 +261,8 @@ const Page = () => {
   }
 
   if (error) {
+    const isAuthError = error.includes("нэвтрэх") || error.includes("Нэвтрэх");
+    
     return (
       <div className="flex justify-center items-center min-h-[60vh] px-4">
         <div className="w-full text-center">
@@ -256,18 +270,33 @@ const Page = () => {
             <XCircle className="text-red-500 w-10 h-10" />
           </div>
           <h2 className="text-xl font-semibold text-red-600 mb-2">
-            Payment Failed
+            {isAuthError ? t("checkout.authenticationRequired") : t("checkout.paymentFailed")}
           </h2>
           <p className="text-sm text-gray-600 mb-6">
-            {error} <br className="hidden sm:block" /> Please go back and try
-            checking out again.
+            {error} <br className="hidden sm:block" />
+            {isAuthError && (
+              <span className="block mt-2 text-blue-600">
+                {t("checkout.redirectingToLogin")}
+              </span>
+            )}
           </p>
-          <button
-            onClick={() => router.push("/cart")}
-            className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
-          >
-            Back to Cart
-          </button>
+          <div className="flex gap-3 justify-center">
+            {isAuthError ? (
+              <button
+                onClick={() => router.push("/login?redirect=/checkout" + (urlSessionId ? `?sessionId=${urlSessionId}` : ""))}
+                className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
+              >
+                {t("checkout.goToLogin")}
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push("/cart")}
+                className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
+              >
+                {t("checkout.backToCart")}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );

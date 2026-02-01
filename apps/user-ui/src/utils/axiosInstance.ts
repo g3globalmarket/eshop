@@ -31,7 +31,17 @@ const onRefreshSuccess = () => {
 
 // Handle API requests
 axiosInstance.interceptors.request.use(
-  (config) => config,
+  (config) => {
+    // Log auth requirement (no secrets)
+    if (config.requireAuth) {
+      console.log("[Axios] Request requires authentication", {
+        url: config.url,
+        method: config.method,
+        hasCookies: typeof document !== "undefined" && document.cookie.length > 0,
+      });
+    }
+    return config;
+  },
   (error) => Promise.reject(error)
 );
 
@@ -46,6 +56,11 @@ axiosInstance.interceptors.response.use(
     const isAuthRequired = originalRequest?.requireAuth === true;
 
     if (is401 && !isRetry && isAuthRequired) {
+      console.log("[Axios] 401 error on protected endpoint, attempting token refresh", {
+        url: originalRequest?.url,
+        method: originalRequest?.method,
+      });
+      
       if (isRefreshing) {
         return new Promise((resolve) => {
           subscribeTokenRefresh(() => resolve(axiosInstance(originalRequest)));
@@ -64,16 +79,26 @@ axiosInstance.interceptors.response.use(
           { withCredentials: true }
         );
 
+        console.log("[Axios] Token refresh successful, retrying request");
         isRefreshing = false;
         onRefreshSuccess();
 
         return axiosInstance(originalRequest);
       } catch (error) {
+        console.log("[Axios] Token refresh failed, redirecting to login");
         isRefreshing = false;
         refreshSubscribers = [];
         handleLogout();
         return Promise.reject(error);
       }
+    }
+    
+    // Log 401 errors on non-protected endpoints (shouldn't happen but helps debug)
+    if (is401 && !isAuthRequired) {
+      console.warn("[Axios] 401 error on non-protected endpoint", {
+        url: originalRequest?.url,
+        method: originalRequest?.method,
+      });
     }
 
     return Promise.reject(error);

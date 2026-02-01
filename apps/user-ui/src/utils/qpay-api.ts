@@ -4,6 +4,7 @@
  */
 
 import axiosInstance from "./axiosInstance";
+import { isProtected } from "./protected";
 
 export interface QPayInvoice {
   invoiceId: string;
@@ -85,7 +86,8 @@ export async function startQPayPayment(
   try {
     const response = await axiosInstance.post<QPayStartPaymentResponse>(
       "/payments/qpay/seed-session",
-      payload
+      payload,
+      isProtected
     );
 
     if (!response.data.success) {
@@ -122,7 +124,8 @@ export async function getQPayPaymentStatus(
 ): Promise<QPayStatusResponse> {
   try {
     const response = await axiosInstance.get<QPayStatusResponse>(
-      `/payments/qpay/status?sessionId=${encodeURIComponent(sessionId)}`
+      `/payments/qpay/status?sessionId=${encodeURIComponent(sessionId)}`,
+      isProtected
     );
 
     return response.data;
@@ -211,7 +214,8 @@ export async function cancelQPayPayment(
   try {
     const response = await axiosInstance.post<QPayCancelResponse>(
       "/payments/qpay/cancel",
-      { sessionId }
+      { sessionId },
+      isProtected
     );
 
     return response.data;
@@ -260,7 +264,8 @@ export async function getQPayEbarimtInfo(
 ): Promise<QPayEbarimtResponse> {
   try {
     const response = await axiosInstance.get<QPayEbarimtResponse>(
-      `/payments/qpay/ebarimt?sessionId=${encodeURIComponent(sessionId)}`
+      `/payments/qpay/ebarimt?sessionId=${encodeURIComponent(sessionId)}`,
+      isProtected
     );
 
     return response.data;
