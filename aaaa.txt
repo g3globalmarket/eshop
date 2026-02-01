@@ -1,131 +1,150 @@
-Verifying the current state and checking for any remaining English text in the dashboard:
-
-
-[7 tools called]
-
-
-Fixing remaining English strings:
-
-
-[5 tools called]
-
-
-Fixing remaining English strings:
-
-
-[17 tools called]
-
-
-Fixing the remaining "Cancel" button:
-
-
-[11 tools called]
-
-
-Fixing the remaining English text in the settings page:
+Verifying the current nginx.conf state and ensuring the fix is correctly applied:
 
 
 [4 tools called]
 
 
-## Summary
+Fix is in place. Ensuring consistency by adding `proxy_next_upstream` to the sellers and admin blocks to match nomadnet.shop:
 
-### STEP 1: Current i18n implementation
 
-**Found:**
-- `apps/seller-ui/src/utils/i18n.ts` - Already Mongolian-only (from previous work)
-- No locale toggle UI found
-- Remaining English strings in:
-  - `create-product/page.tsx` - "Subcategory is required"
-  - `sidebar.item.tsx` - "Logout" hardcoded check
-  - `settings/page.tsx` - Multiple English strings
+[5 tools called]
 
-### STEP 2: Made i18n Mongolian-only
 
-**File:** `apps/seller-ui/src/utils/i18n.ts`
-- Already Mongolian-only (no English dictionary)
-- No locale switching logic (no `getLocale`, `setLocale`, localStorage)
-- `useTranslation()` returns only `{ t }`
-- `t(key)` always returns Mongolian (returns key if missing, not English)
+Fix applied. All three server blocks are updated and consistent. Summary:
 
-### STEP 3: Replaced remaining hardcoded English
+## Fix summary
 
-**File:** `apps/seller-ui/src/app/(routes)/dashboard/create-product/page.tsx`
-- Fixed: `"Subcategory is required"` → `t("validation.subCategoryRequired")`
+### Changes applied to `nginx.conf`
 
-**File:** `apps/seller-ui/src/shared/components/sidebar/sidebar.item.tsx`
-- Added: `useTranslation()` hook
-- Fixed: `title === "Logout"` → `title === t("dashboard.logout")`
+**3 server blocks updated:**
 
-**File:** `apps/seller-ui/src/app/(routes)/dashboard/settings/page.tsx`
-- Added: `useTranslation()` hook
-- Fixed: `"Settings"` → `t("settings.title")`
-- Fixed: `"Dashboard"` → `t("dashboard.title")`
-- Fixed: `"Save Changes"` → `t("settings.saveChanges")` (2 instances)
-- Fixed: `"Cancel"` → `t("settings.cancel")`
-- Fixed: `"Settings saved successfully!"` → `t("settings.savedSuccessfully")`
-- Fixed: `"Order Notification Preferences"` → `t("settings.orderNotificationPreferences")`
-- Fixed: `"Choose how you receive order notifications..."` → `t("settings.chooseNotificationMethod")`
+1. **Line 72** - `nomadnet.shop` (main user site):
+   ```diff
+   - location /product/        { proxy_pass http://api_backend/product/;        ... }
+   + location ^~ /product/api/ { proxy_pass http://api_backend/product/api/;    proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504; ... }
+   ```
 
-### STEP 4: Added missing MN translation keys
+2. **Line 124** - `sellers.nomadnet.shop`:
+   ```diff
+   - location /product/ { proxy_pass http://api_backend/product/; ... }
+   + location ^~ /product/api/ { proxy_pass http://api_backend/product/api/; proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504; ... }
+   ```
 
-**File:** `apps/seller-ui/src/utils/i18n.ts`
-Added keys:
-- `"settings.title": "Тохиргоо"`
-- `"settings.saveChanges": "Өөрчлөлт хадгалах"`
-- `"settings.cancel": "Цуцлах"`
-- `"settings.savedSuccessfully": "Тохиргоо амжилттай хадгалагдлаа!"`
-- `"settings.orderNotificationPreferences": "Захиалгын мэдэгдлийн тохиргоо"`
-- `"settings.chooseNotificationMethod": "Захиалгын мэдэгдлийг хэрхэн хүлээн авахыг сонгоно уу (Имэйл, Веб, Апп)."`
+3. **Line 169** - `admin.nomadnet.shop`:
+   ```diff
+   - location /product/ { proxy_pass http://api_backend/product/; ... }
+   + location ^~ /product/api/ { proxy_pass http://api_backend/product/api/; proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504; ... }
+   ```
 
-### STEP 5: Verification
+**How it works:**
+- `^~` prefix ensures `/product/api/` matches before generic `location /`
+- `/product/api/*` → proxied to `api_backend` (API calls work)
+- `/product/<slug>` → falls through to `location /` → proxied to `user_frontend` (pages work)
 
-**Build:**
+---
+
+## Verification commands
+
+### Step 1: Validate Nginx config syntax
 ```bash
-npx nx build seller-ui
-# Result: ✅ Successfully ran target build for project @./seller-ui
+# Get nginx container ID
+NGX=$(docker compose -p eshop -f docker-compose.production.yml -f docker-compose.override.yml -f docker-compose.nginx-override.yml ps -q nginx)
+
+# Test config syntax
+docker exec "$NGX" nginx -t
 ```
 
-**English text check:**
-```bash
-grep -R "Dashboard|Create Product|Save Changes|Cancel|Description must be" ...
-# Result: ✅ No English strings found
+**Expected output:**
+```
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
 ```
 
-**"100 words" validation check:**
+### Step 2: Reload Nginx
 ```bash
-grep -R "Description must be at least 100 words" apps/seller-ui/src/app/(routes)/dashboard/create-product
-# Result: ✅ Verified: No '100 words' validation in create-product page
+# Reload nginx (preferred - no downtime)
+docker exec "$NGX" nginx -s reload
+
+# OR restart the container (if reload doesn't work)
+docker compose -p eshop -f docker-compose.production.yml -f docker-compose.override.yml -f docker-compose.nginx-override.yml restart nginx
 ```
+
+**Expected output:**
+- No errors
+- Nginx reloads successfully
+
+### Step 3: Verify product page routing (frontend)
+```bash
+# Test product detail page - should return HTML from user-ui
+curl -I https://nomadnet.shop/product/asas
+```
+
+**Expected result:**
+```
+HTTP/2 200
+content-type: text/html; charset=utf-8
+...
+```
+- Must NOT see: `"Cannot GET /asas"`
+- Must see: `Content-Type: text/html` (from Next.js frontend)
+
+### Step 4: Verify product API routing (backend)
+```bash
+# Test product API endpoint - should return JSON from backend
+curl -I https://nomadnet.shop/product/api/get-categories
+```
+
+**Expected result:**
+```
+HTTP/2 200
+content-type: application/json
+...
+```
+- Should return JSON response
+- API endpoint still works correctly
+
+### Step 5: Verify routing logic in running Nginx
+```bash
+# Check the actual location block in running nginx
+docker exec "$NGX" sh -lc "nginx -T 2>/dev/null | sed -n '/location.*product/,/}/p'"
+```
+
+**Expected output:**
+```
+location ^~ /product/api/ {
+    proxy_pass http://api_backend/product/api/;
+    proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+---
+
+## Expected behavior
+
+### Before fix:
+- `https://nomadnet.shop/product/asas` → `Cannot GET /asas` (backend error)
+- `https://nomadnet.shop/product/api/get-categories` → Works (JSON response)
+
+### After fix:
+- `https://nomadnet.shop/product/asas` → HTML page from user-ui (200 OK)
+- `https://nomadnet.shop/product/api/get-categories` → Still works (JSON response)
 
 ---
 
 ## Files changed
 
-1. `apps/seller-ui/src/utils/i18n.ts`
-   - Added Settings page translation keys
+**`nginx.conf`** - 3 locations updated:
+- Line 72: `nomadnet.shop` server block
+- Line 124: `sellers.nomadnet.shop` server block  
+- Line 169: `admin.nomadnet.shop` server block
 
-2. `apps/seller-ui/src/app/(routes)/dashboard/create-product/page.tsx`
-   - Fixed: "Subcategory is required" → Mongolian translation
+**No breaking changes:**
+- All existing API endpoints under `/product/api/*` continue to work
+- Other service routes (`/auth/`, `/order/`, `/seller/`, etc.) unchanged
+- Frontend routing for `/product/<slug>` now works correctly
 
-3. `apps/seller-ui/src/shared/components/sidebar/sidebar.item.tsx`
-   - Added `useTranslation()` hook
-   - Fixed: "Logout" hardcoded check → uses translation
-
-4. `apps/seller-ui/src/app/(routes)/dashboard/settings/page.tsx`
-   - Added `useTranslation()` hook
-   - Translated all English strings to Mongolian
-
----
-
-## Verification
-
-- Build: Successful
-- No English strings: Verified in create-product, settings, and sidebar
-- "100 words" validation: Removed from create-product page
-- No locale switching: Confirmed (no `getLocale`, `setLocale`, localStorage)
-- Sidebar: All menu items in Mongolian
-- Create Product page: All labels, errors, and messages in Mongolian
-- Settings page: All text in Mongolian
-
-**Status:** Complete — Dashboard is Mongolian-only with no English fallback or locale switching.
+**Status:** Ready for deployment. Run the verification commands above to confirm the fix works in production.
