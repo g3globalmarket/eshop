@@ -34,9 +34,32 @@ const Page = () => {
     const initializePayment = async () => {
       // If qpaySessionId is in URL, we're resuming a QPay payment
       if (urlQpaySessionId) {
-        setQpaySessionId(urlQpaySessionId);
-        setLoading(false);
-        return;
+        console.log("[Checkout] Resuming QPay payment", {
+          sessionId: `${urlQpaySessionId.substring(0, 8)}...`,
+        });
+        
+        // Try to fetch invoice data from status endpoint
+        try {
+          const statusRes = await axiosInstance.get(
+            `/payments/qpay/status?sessionId=${encodeURIComponent(urlQpaySessionId)}`
+          );
+          
+          if (statusRes.data.ok && statusRes.data.invoiceId) {
+            // Invoice exists, but we need QR data - fetch from session payload
+            // For now, set sessionId and let component handle it
+            // TODO: Add endpoint to get invoice data by sessionId
+            setQpaySessionId(urlQpaySessionId);
+            setLoading(false);
+            return;
+          } else {
+            throw new Error("Session not found or invalid");
+          }
+        } catch (err: any) {
+          console.error("[Checkout] Failed to resume payment", err);
+          setError("Payment session expired or not found. Please start a new payment.");
+          setLoading(false);
+          return;
+        }
       }
 
       // Otherwise, fetch session and create payment intent
@@ -120,7 +143,49 @@ const Page = () => {
       }
 
       // Create QPay payment session + invoice
+      console.log("[Checkout] Creating QPay payment", {
+        sessionId: urlSessionId ? `${urlSessionId.substring(0, 8)}...` : null,
+        totalAmount: sessionData.totalAmount,
+        itemCount: sessionData.cart?.length || 0,
+        hasEbarimt: !!ebarimtData,
+        endpoint: "/payments/qpay/seed-session",
+      });
+      
       const qpayResponse = await startQPayPayment(payload);
+
+      // Validate response structure
+      if (!qpayResponse) {
+        throw new Error("No response from payment service.");
+      }
+
+      if (!qpayResponse.success) {
+        const errorMsg = qpayResponse.error || qpayResponse.details || "Payment creation failed";
+        throw new Error(errorMsg);
+      }
+
+      if (!qpayResponse.sessionId) {
+        throw new Error("Payment session created but missing session ID.");
+      }
+
+      if (!qpayResponse.invoice) {
+        throw new Error("Payment session created but missing invoice data (QR code).");
+      }
+
+      // Validate invoice has at least QR text or image
+      if (!qpayResponse.invoice.qrText && !qpayResponse.invoice.qrImage) {
+        throw new Error("Invoice created but missing QR code data.");
+      }
+
+      console.log("[Checkout] QPay payment created successfully", {
+        sessionId: `${qpayResponse.sessionId.substring(0, 8)}...`,
+        invoiceId: qpayResponse.invoice.invoiceId ? `${qpayResponse.invoice.invoiceId.substring(0, 8)}...` : null,
+        invoiceId_len: qpayResponse.invoice.invoiceId?.length || 0,
+        amount: sessionData.totalAmount,
+        itemCount: sessionData.cart?.length || 0,
+        hasEbarimt: !!ebarimtData,
+        hasQR: !!qpayResponse.invoice.qrImage || !!qpayResponse.invoice.qrText,
+        hasDeeplinks: !!qpayResponse.invoice.deeplinks?.length,
+      });
 
       setQpaySessionId(qpayResponse.sessionId);
       setQpayInvoice(qpayResponse.invoice);
@@ -135,7 +200,41 @@ const Page = () => {
       window.history.replaceState({}, "", url.toString());
     } catch (err: any) {
       console.error("[Checkout] QPay payment creation error:", err);
-      setError(err.message || "Failed to create payment. Please try again.");
+      
+      // Log request details (no secrets)
+      const errorDetails = {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        endpoint: err.config?.url || err.request?.url || "/payments/qpay/seed-session",
+        method: err.config?.method || "POST",
+        hasSessionData: !!sessionData,
+        sessionId: urlSessionId ? `${urlSessionId.substring(0, 8)}...` : null,
+        responseData: err.response?.data ? {
+          success: err.response.data.success,
+          error: err.response.data.error,
+          details: err.response.data.details,
+        } : null,
+      };
+      console.error("[Checkout] Error details:", errorDetails);
+      
+      // Provide user-friendly error message based on error type
+      let errorMessage = "Failed to create payment. Please try again.";
+      
+      if (err.response?.status === 404) {
+        errorMessage = "Payment endpoint not found (404). The payment service may be unavailable. Please contact support.";
+      } else if (err.response?.status === 401) {
+        errorMessage = "Authentication required. Please log in and try again.";
+      } else if (err.response?.status === 403) {
+        errorMessage = "Access denied. Please check your account permissions.";
+      } else if (err.response?.status >= 500) {
+        errorMessage = "Payment service temporarily unavailable. Please try again in a moment.";
+      } else if (err.response?.status === 400) {
+        errorMessage = err.response?.data?.error || err.response?.data?.details || "Invalid payment request. Please check your cart and try again.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setCreatingPayment(false);
     }
