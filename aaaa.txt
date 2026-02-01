@@ -1,193 +1,100 @@
-Auditing seller-ui for remaining absolute URLs and verifying all fixes are in place:
+Verifying infrastructure and UI configuration, then testing browser E2E connectivity.
 
 
-[7 tools called]
+[13 tools called]
 
 
-Verifying the signup form and checking for any remaining issues:
+Checking if `.env.local` overrides root `.env` and verifying the configuration:
 
 
-[5 tools called]
+[11 tools called]
 
 
-## Implementation status: complete
+Updating the audit docs with evidence:
 
-All requested changes are implemented. Summary:
 
-## A) Audit results
+[11 tools called]
 
-### Files using relative API paths (no absolute URLs):
-1. `apps/seller-ui/src/utils/axiosInstance.tsx` - `baseURL: ""`, uses `/auth/api/refresh-token`
-2. `apps/seller-ui/src/shared/modules/auth/create-shop.tsx` - uses `/api/create-shop`
-3. `apps/seller-ui/src/app/(routes)/signup/page.tsx` - uses `/auth/api/seller-registration`, `/auth/api/verify-seller`
-4. `apps/seller-ui/src/app/(routes)/login/page.tsx` - uses `/auth/api/login-seller`
-5. `apps/seller-ui/src/hooks/useSeller.tsx` - uses `/auth/api/logged-in-seller`
-
-### No absolute URLs found:
-- All API calls use relative paths (`/api/*`, `/auth/api/*`)
-- No hardcoded `https://nomadnet.shop` in API calls
-- Only found `nomadnet.shop` in:
-  - Placeholder text (`placeholder="https://example.com"`)
-  - Image URLs (not API calls)
-  - Display text (custom domain settings)
-
-## B) Code fixes — already complete
-
-### 1. API calls use relative paths
-- `/api/create-shop`
-- `/auth/api/seller-registration`
-- `/auth/api/verify-seller`
-- `/auth/api/login-seller`
-- `/auth/api/refresh-token`
-- `/auth/api/logged-in-seller`
-
-### 2. Axios instance configuration
-```typescript
-const axiosInstance = axios.create({
-  baseURL: "",  // ✅ Empty = same-origin
-  withCredentials: true,
-});
-```
-
-### 3. Dockerfile
-```dockerfile
-ARG NEXT_PUBLIC_SERVER_URI=https://sellers.nomadnet.shop
-ENV NEXT_PUBLIC_SERVER_URI=${NEXT_PUBLIC_SERVER_URI}
-```
-
-## C) Phone/Country optional — already complete
-
-- Frontend: No `required` validation on phone/country fields
-- Payload normalization: `phone_number: data.phone_number?.trim() || undefined`
-- Backend: Handles optional values correctly
-
-## D) Stripe step removed — already complete
-
-- Stepper: Only `[1, 2]` steps
-- No Stripe UI: No `activeStep === 3` block
-- Success path: Redirects to `/login` after shop creation
-
-## E) Nginx proxy — already complete
-
-```nginx
-location /api/     { proxy_pass http://api_backend/api/; ... }
-location /auth/    { proxy_pass http://api_backend/auth/; ... }
-```
-
-## Final list of endpoints (all same-origin)
-
-All endpoints now use relative paths and will be same-origin on `https://sellers.nomadnet.shop`:
-
-1. `/api/create-shop` - Shop creation
-2. `/auth/api/seller-registration` - Seller registration
-3. `/auth/api/verify-seller` - OTP verification
-4. `/auth/api/login-seller` - Seller login
-5. `/auth/api/refresh-token` - Token refresh
-6. `/auth/api/logged-in-seller` - Get logged-in seller
-
-## Verification checklist
-
-### 1. Build seller-ui
-```bash
-# Build seller-ui
-pnpm --filter seller-ui build
-# OR
-pnpm exec nx build seller-ui
-
-# Expected: Build succeeds without TypeScript errors
-```
-
-### 2. Test seller signup locally
-```bash
-# Start seller-ui dev server
-pnpm --filter seller-ui dev
-
-# Then in browser (typically http://localhost:3001/signup):
-# 1. Fill form WITHOUT phone/country:
-#    - Name: "Test Seller"
-#    - Email: "test@example.com"
-#    - Phone: (leave empty)
-#    - Country: (leave empty)
-#    - Password: "password123"
-# 2. Submit form
-# 3. Verify: OTP step appears (no validation errors)
-# 4. Enter OTP
-# 5. Verify: Shop creation step appears (step 2, NOT step 3)
-# 6. Create shop
-# 7. Verify: Redirects to /login (not step 3)
-
-# Expected:
-# ✓ No validation errors for empty phone/country
-# ✓ Only 2 steps shown (not 3)
-# ✓ No Stripe step
-# ✓ Successful redirect to /login
-```
-
-### 3. Test production API routing
-```bash
-# Test that /api/* is proxied on sellers domain
-curl -skI https://sellers.nomadnet.shop/api/create-shop
-
-# Expected:
-# - HTTP/2 404, 405, 401, or 403 (not a CORS issue)
-# - Should NOT return CORS errors
-# - Headers show it's reaching the backend via nginx
-
-# Test auth endpoints
-curl -skI https://sellers.nomadnet.shop/auth/api/seller-registration
-
-# Expected: Similar response (404/405/401, but proxy works)
-```
-
-### 4. Browser network tab test (production)
-
-Steps:
-1. Open `https://sellers.nomadnet.shop` in browser
-2. Open Developer Tools → Network tab
-3. Perform seller signup and shop creation
-4. Check Network tab for API requests
-
-Expected results:
-- Requests to `https://sellers.nomadnet.shop/api/create-shop` (same-origin, NOT `https://nomadnet.shop`)
-- Requests to `https://sellers.nomadnet.shop/auth/api/*` (same-origin)
-- No CORS errors in console
-- No `Access-Control-Allow-Origin` errors
-- Cookies sent automatically (same-origin)
-- Status codes: 200, 201, 401, etc. (no CORS preflight failures)
-- No 401 errors for `logged-in-user` (cookies work)
-- No 400 errors for `refresh-token` (cookies work)
-
-### 5. Verify no Stripe references
-```bash
-# Search for any remaining Stripe references in signup flow
-grep -r "StripeLogo\|connectStripe\|activeStep === 3\|create-stripe-link" apps/seller-ui/src/app/\(routes\)/signup
-
-# Expected: No matches
-```
-
-### 6. Verify Dockerfile build arg
-```bash
-# Build seller-ui Docker image
-docker build -t seller-ui:test -f apps/seller-ui/Dockerfile .
-
-# Verify environment variable
-docker run --rm seller-ui:test env | grep NEXT_PUBLIC_SERVER_URI
-
-# Expected: NEXT_PUBLIC_SERVER_URI=https://sellers.nomadnet.shop
-
-# Test with custom build arg
-docker build --build-arg NEXT_PUBLIC_SERVER_URI=https://custom.domain.com -t seller-ui:test -f apps/seller-ui/Dockerfile .
-
-# Expected: Build succeeds and uses custom domain
-```
 
 ## Summary
 
-All issues are resolved:
-1. CORS fixed: all API calls use relative paths (same-origin)
-2. Phone/country optional: no required validation, payload normalized
-3. Stripe step removed: 2-step flow, redirects to login
-4. Nginx proxy configured: `/api/` and `/auth/` proxied correctly
-5. Dockerfile updated: uses sellers domain with build arg support
+### Did user-ui/admin-ui call localhost:8080?
 
-The implementation is complete and ready for production. All API calls are same-origin, eliminating CORS issues, and the signup flow works without phone/country and without the Stripe step.
+**Status:** ✅ Configured (browser verification needed)
+
+**Actions taken:**
+1. Verified env vars are set in root `.env` and `apps/user-ui/.env.local`
+2. Ensured `apps/user-ui/.env.local` has `NEXT_PUBLIC_SERVER_URI=http://localhost:8080`
+3. Ensured `apps/admin-ui/.env.local` has `NEXT_PUBLIC_SERVER_URI=http://localhost:8080`
+4. Restarted UIs to pick up env vars
+5. Verified API Gateway endpoints work via curl
+
+**Evidence:**
+- `apps/user-ui/.env.local` contains `http://localhost:8080` (verified)
+- UIs restarted successfully (ports 3000, 3002 bound)
+- API Gateway endpoints return 200 with expected JSON
+- **Note:** Browser DevTools Network tab verification needed to confirm UI makes calls to `localhost:8080` (not production)
+
+---
+
+### Commands run + results
+
+**Step 1: Infrastructure verification**
+```bash
+curl http://localhost:8080/gateway-health
+```
+**Result:** ✅ Gateway running, health check returns JSON
+
+**Step 2: Env var verification**
+```bash
+node -e "require('dotenv').config(); ['NEXT_PUBLIC_SERVER_URI',...].forEach(k=>console.log(k+':',process.env[k]?'[SET]':'[NOT SET]'))"
+```
+**Result:** ✅ All 4 `NEXT_PUBLIC_*` vars [SET]
+
+**Step 3: UI configuration**
+```bash
+# Found apps/user-ui/.env.local exists (Next.js priority)
+# Ensured apps/user-ui/.env.local has NEXT_PUBLIC_SERVER_URI=http://localhost:8080
+# Ensured apps/admin-ui/.env.local has NEXT_PUBLIC_SERVER_URI=http://localhost:8080
+```
+**Result:** ✅ Both UIs configured with localhost:8080
+
+**Step 4: UI restart**
+```bash
+pnpm user-ui   # Port 3000
+pnpm admin-ui # Port 3002
+```
+**Result:** ✅ Both UIs started, ports bound, serving HTML
+
+**Step 5: API endpoint verification**
+```bash
+curl "http://localhost:8080/product/api/get-all-products?page=1&limit=5"
+curl "http://localhost:8080/product/api/get-categories"
+```
+**Result:** ✅ Both return 200 with expected JSON
+- Products: `{"products":[],"total":0,...}`
+- Categories: `{"categories":["Electronics",...],"subCategories":{...}}`
+
+**Step 6: SMTP configuration check**
+**Result:** ❌ SMTP env vars not configured (required for registration/login)
+- Required: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SERVICE`, `SMTP_USER`, `SMTP_PASS`
+- Code location: `apps/auth-service/src/utils/sendMail/index.ts`
+
+---
+
+### Remaining blockers (max 5)
+
+1. Browser verification needed — Open user-ui (http://localhost:3000), DevTools → Network, verify API requests show `localhost:8080` as host
+2. SMTP configuration missing — Registration/login blocked; need `SMTP_HOST`, `SMTP_PORT`, `SMTP_SERVICE`, `SMTP_USER`, `SMTP_PASS` for OTP emails
+3. Order creation flow — Requires authentication and may trigger payment (needs sandbox verification)
+4. QPay scripts — Not run (require sandbox verification)
+5. Seller/Admin authenticated flows — Require login credentials or SMTP for registration
+
+**Next recommended action:**
+1. Open user-ui in browser (http://localhost:3000), open DevTools → Network tab, navigate to product pages, and verify API requests show `localhost:8080` as host (not production domains)
+2. Configure SMTP for local testing (Gmail SMTP, Mailtrap, or local mail server) to enable registration/login flows
+3. Test authenticated flows (login → product browse → cart) through UI after SMTP is configured
+
+---
+
+**Status:** UI → API Gateway connectivity configured. UIs restarted with correct env vars. API endpoints verified via curl. Browser DevTools verification needed to confirm UI-to-gateway connectivity. Registration/login blocked by missing SMTP configuration. Documentation updated with evidence and setup steps.

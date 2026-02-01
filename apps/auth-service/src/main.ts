@@ -7,7 +7,7 @@ import swaggerUi from "swagger-ui-express";
 const swaggerDocument = require("./swagger-output.json");
 
 // Validate required environment variables at startup (fail fast with clear error)
-const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+const requiredEnvVars = ['DATABASE_URL', 'ACCESS_TOKEN_SECRET', 'REFRESH_TOKEN_SECRET'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 if (missingVars.length > 0) {
   console.error(`[FATAL] Missing required environment variables: ${missingVars.join(', ')}`);

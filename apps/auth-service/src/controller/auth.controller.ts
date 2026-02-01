@@ -42,7 +42,7 @@ export const userRegistration = async (
 
     await checkOtpRestrictions(email, next);
     await trackOtpRequests(email, next);
-    await sendOtp(name, email, "user-activation-mail");
+    const otp = await sendOtp(name, email, "user-activation-mail");
 
     sendLog({
       type: "info",
@@ -50,9 +50,20 @@ export const userRegistration = async (
       source: "auth-service",
     });
 
-    res.status(200).json({
-      message: "OTP sent to email. Please verify your account.",
-    });
+    // Dev-only: expose OTP in response if flag is set
+    const isDevMode = process.env.NODE_ENV === "development";
+    const exposeOtpInDev = process.env.EXPOSE_OTP_IN_DEV === "true";
+    
+    if (isDevMode && exposeOtpInDev) {
+      res.status(200).json({
+        message: "OTP generated for local testing (dev mode).",
+        devOtp: otp, // Only exposed in dev mode with flag
+      });
+    } else {
+      res.status(200).json({
+        message: "OTP sent to email. Please verify your account.",
+      });
+    }
   } catch (error) {
     return next(error);
   }

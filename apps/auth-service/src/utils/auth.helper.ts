@@ -62,11 +62,26 @@ export const sendOtp = async (
   name: string,
   email: string,
   template: string
-) => {
+): Promise<string> => {
   const otp = crypto.randomInt(1000, 9999).toString();
+  
+  // Dev-only: expose OTP in response if flag is set (no email sent)
+  const isDevMode = process.env.NODE_ENV === "development";
+  const exposeOtpInDev = process.env.EXPOSE_OTP_IN_DEV === "true";
+  
+  if (isDevMode && exposeOtpInDev) {
+    // Skip email sending in dev mode when flag is set
+    // Still store OTP in Redis for verification
+    await redis.set(`otp:${email}`, otp, "EX", 300);
+    await redis.set(`otp_cooldown:${email}`, "true", "EX", 60);
+    return otp; // Return OTP for dev testing
+  }
+  
+  // Production behavior: send email via SMTP
   await sendEmail(email, "Verify Your Email", template, { name, otp });
   await redis.set(`otp:${email}`, otp, "EX", 300);
   await redis.set(`otp_cooldown:${email}`, "true", "EX", 60);
+  return otp; // Return OTP (won't be exposed in production response)
 };
 
 export const verifyOtp = async (
@@ -123,7 +138,7 @@ export const handleForgotPassword = async (
     await trackOtpRequests(email, next);
 
     // Generate OTP and send Email
-    await sendOtp(
+    const otp = await sendOtp(
       user.name,
       email,
       userType === "user"
@@ -131,9 +146,18 @@ export const handleForgotPassword = async (
         : "forgot-password-seller-mail"
     );
 
-    res
-      .status(200)
-      .json({ message: "OTP sent to email. Please verify your account." });
+    // Dev-only: expose OTP in response if flag is set
+    const isDevMode = process.env.NODE_ENV === "development";
+    const exposeOtpInDev = process.env.EXPOSE_OTP_IN_DEV === "true";
+    
+    if (isDevMode && exposeOtpInDev) {
+      res.status(200).json({
+        message: "OTP generated for local testing (dev mode).",
+        devOtp: otp, // Only exposed in dev mode with flag
+      });
+    } else {
+      res.status(200).json({ message: "OTP sent to email. Please verify your account." });
+    }
   } catch (error) {
     next(error);
   }
