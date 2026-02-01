@@ -2,7 +2,8 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "apps/seller-ui/src/store/authStore";
-import axios, { AxiosError } from "axios";
+import axiosInstance from "../../../utils/axiosInstance";
+import { AxiosError } from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -30,10 +31,9 @@ const Login = () => {
 
   const loginMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         `/auth/api/login-seller`,
-        data,
-        { withCredentials: true }
+        data
       );
       return response.data;
     },

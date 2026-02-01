@@ -537,9 +537,13 @@ curl http://localhost:3001
 **Result:** ✅ Success
 - Service started and bound to port 3001
 - Page loads HTML successfully
-- **Configuration:** Uses empty baseURL (relative paths, same origin)
-- **Required Env Vars:** `NEXT_PUBLIC_CHATTING_WEBSOCKET_URI` (optional)
-- **Note:** Uses relative API paths, so it will call the same origin (needs proxy or direct service access)
+- **Configuration:** Uses `NEXT_PUBLIC_SERVER_URI` env var for API baseURL (defaults to `http://localhost:8080` if not set)
+- **Required Env Vars:** `NEXT_PUBLIC_SERVER_URI` (points to backend/api-gateway domain)
+- **Fixed:** Previously used empty baseURL (same-origin), causing API requests to hit `sellers.nomadnet.shop/api/*` (404). Now correctly routes to backend domain.
+- **API Routes:** 
+  - `/auth/api/create-shop` → backend (was `/api/create-shop` → 404)
+  - `/auth/api/login-seller` → backend
+  - `/auth/api/refresh-token` → backend
 
 ### admin-ui (Port 3002)
 **Ran ✅:**

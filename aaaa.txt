@@ -1,119 +1,149 @@
-Reviewing the implementation against the requirements and making adjustments:
+Locating where seller-ui sets its API base URL.
 
 
-[14 tools called]
+[6 tools called]
 
 
-Fixing variable references:
+Reviewing the files to understand the current setup:
+
+
+[6 tools called]
+
+
+Searching for seller routes in the API gateway:
+
+
+[5 tools called]
+
+
+Checking the seller-service route structure:
 
 
 [3 tools called]
 
 
-## Implementation complete
+Checking where create-shop is defined:
 
-### Files created/modified
 
-**1. Created: `scripts/postdeploy-verify.sh` (184 lines)**
-- Bash strict mode: `set -euo pipefail`
-- Uses exact compose project + files: `PROJECT="eshop"`, `FILES=(-f docker-compose.production.yml -f docker-compose.override.yml -f docker-compose.nginx-override.yml)`
-- Verifies critical services: `api-gateway`, `auth-service`
-- For each service:
-  - a) Container exists check: `CID=$(docker compose -p "$PROJECT" "${FILES[@]}" ps -q "$svc")`
-  - b) Container status check: `docker inspect -f '{{.State.Status}}' "$CID"` (must be "running")
-  - c) Healthcheck status: `docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$CID"` (must be "healthy" if healthcheck exists)
-  - HTTP checks: localhost endpoints (gateway:8080/gateway-health, auth-service:6001 tries /api, /health, /)
-- On failure: prints last 120 lines of service logs and exits 1
+[3 tools called]
 
-**2. Modified: `scripts/deploy-production.sh`**
-- Added Step 6 at the end (lines 195-211):
-  - Runs `./scripts/postdeploy-verify.sh` if it exists
-  - Falls back to `/usr/local/bin/eshop-postdeploy-check.sh` if repo script missing
-  - Ensures script is executable before running
 
-**3. Modified: `.github/workflows/docker-build.yml`**
-- Removed redundant call to `/usr/local/bin/eshop-postdeploy-check.sh` (now handled by deploy script)
+Implementing the fixes:
 
----
 
-### Evidence
+[16 tools called]
 
-**Syntax validation:**
-```bash
-bash -n scripts/postdeploy-verify.sh   # ✅ Valid
-bash -n scripts/deploy-production.sh   # ✅ Valid
+
+Fixing the login page import:
+
+
+[5 tools called]
+
+
+Checking if seller-ui needs NEXT_PUBLIC_SERVER_URI in docker-compose:
+
+
+[3 tools called]
+
+
+## Summary
+
+### Root cause
+- seller-ui used `baseURL: ""` (same-origin), so requests went to `sellers.nomadnet.shop/api/*` (404)
+- `create-shop` called `/api/create-shop` instead of `/auth/api/create-shop`
+- `refresh-token` didn't use baseURL
+- Dockerfile defaulted to `https://sellers.nomadnet.shop` instead of the backend domain
+
+### Files changed
+
+**1. `apps/seller-ui/src/utils/axiosInstance.tsx`**
+```typescript
+// Before:
+const axiosInstance = axios.create({
+  baseURL: "",
+  withCredentials: true,
+});
+
+// After:
+const axiosInstance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_SERVER_URI || "http://localhost:8080",
+  withCredentials: true,
+});
 ```
+- Also fixed refresh-token to use baseURL
 
-**Key implementation details:**
-- Uses exact variable names: `PROJECT="eshop"`, `FILES=(-f ...)`
-- Container ID check: `docker compose -p "$PROJECT" "${FILES[@]}" ps -q "$svc"`
-- Healthcheck check: `{{if .State.Health}}{{.State.Health.Status}}{{end}}` (handles missing healthcheck)
-- HTTP checks: localhost only (no external calls)
-- Logs on failure: `--tail=120` as specified
-- Exit codes: 0 on success, 1 on failure (causes GitHub Actions to fail)
+**2. `apps/seller-ui/src/shared/modules/auth/create-shop.tsx`**
+```typescript
+// Before:
+await axios.post(`/api/create-shop`, data)
 
----
-
-### Diffs
-
-**`scripts/postdeploy-verify.sh` (new file)**
-```bash
-#!/bin/bash
-set -euo pipefail
-
-PROJECT="eshop"
-FILES=(-f docker-compose.production.yml -f docker-compose.override.yml -f docker-compose.nginx-override.yml)
-
-CRITICAL_SERVICES=("api-gateway" "auth-service")
-
-# [Full implementation with container checks, health checks, HTTP checks]
+// After:
+await axiosInstance.post(`/auth/api/create-shop`, data)
 ```
+- Changed path from `/api/create-shop` to `/auth/api/create-shop` (correct backend route)
+- Uses `axiosInstance` (with baseURL) instead of raw `axios`
 
-**`scripts/deploy-production.sh` (added at end)**
-```bash
-# --------------------------------------------------------------------
-# 6) Post-deploy verification (fail-fast on critical service failures)
-# --------------------------------------------------------------------
-echo ""
-echo "🔍 Running post-deploy verification..."
+**3. `apps/seller-ui/src/app/(routes)/login/page.tsx`**
+- Changed to use `axiosInstance` instead of raw `axios`
+- Ensures login requests use correct baseURL
 
-if [ -f "./scripts/postdeploy-verify.sh" ]; then
-  chmod +x ./scripts/postdeploy-verify.sh
-  ./scripts/postdeploy-verify.sh nomadnet.shop
-elif [ -f "/usr/local/bin/eshop-postdeploy-check.sh" ]; then
-  bash /usr/local/bin/eshop-postdeploy-check.sh nomadnet.shop
-else
-  echo "⚠️  Post-deploy verification script not found"
-  echo "   Skipping detailed verification..."
-fi
-```
-
-**`.github/workflows/docker-build.yml` (removed redundant call)**
-```yaml
+**4. `apps/seller-ui/Dockerfile`**
+```dockerfile
 # Before:
-./scripts/deploy-production.sh
-bash /usr/local/bin/eshop-postdeploy-check.sh nomadnet.shop
+ARG NEXT_PUBLIC_SERVER_URI=https://sellers.nomadnet.shop
 
 # After:
-./scripts/deploy-production.sh
-# Note: deploy-production.sh now includes post-deploy verification
+ARG NEXT_PUBLIC_SERVER_URI=https://nomadnet.shop
 ```
 
----
+**5. `docker-compose.production.yml`**
+- Added `NEXT_PUBLIC_SERVER_URI` and `NEXT_PUBLIC_CHATTING_WEBSOCKET_URI` to seller-ui environment
+- Note: Next.js bakes `NEXT_PUBLIC_*` vars at build time, so the image must be rebuilt with the correct ARG
 
-### How it prevents "green but broken" deploys
-
-1. Container existence: fails if container doesn't exist (e.g., failed to start)
-2. Running status: fails if container is "exited", "restarting", etc.
-3. Health status: fails if healthcheck exists and status is not "healthy" (catches runtime crashes)
-4. HTTP endpoints: fails if services don't respond (catches app-level failures)
-
-On any failure:
-- Prints last 120 lines of service logs
-- Exits with code 1
-- GitHub Actions step fails (appleboy/ssh-action fails on non-zero exit)
-- CI/CD shows red, preventing false positives
+**6. `LOCAL_AUDIT_REPORT.md`**
+- Updated seller-ui section with fix details
 
 ---
 
-**Status:** CI/CD now fails fast if critical services (especially auth-service) are not running/healthy after deployment. The script verifies containers, health status, and HTTP endpoints, preventing "green but broken" deploys.
+### Verification steps
+
+**In browser DevTools Network tab:**
+1. Create shop request:
+   - Before: `POST https://sellers.nomadnet.shop/api/create-shop` → 404
+   - After: `POST https://nomadnet.shop/auth/api/create-shop` → 200/201 or 401 (if auth missing)
+2. Refresh token request:
+   - Before: `POST https://sellers.nomadnet.shop/auth/api/refresh-token` → 400
+   - After: `POST https://nomadnet.shop/auth/api/refresh-token` → 200 or 401
+3. Login request:
+   - After: `POST https://nomadnet.shop/auth/api/login-seller` → 200
+4. Check Request Headers:
+   - Should include `cookie:` header (withCredentials: true)
+
+---
+
+### Deployment notes
+
+Important: Next.js bakes `NEXT_PUBLIC_*` environment variables at build time, not runtime.
+
+To deploy:
+1. Rebuild seller-ui image with correct ARG:
+   ```bash
+   docker build --build-arg NEXT_PUBLIC_SERVER_URI=https://nomadnet.shop -t seller-ui:latest .
+   ```
+2. Or ensure `.env` has `NEXT_PUBLIC_SERVER_URI=https://nomadnet.shop` before build
+3. The docker-compose `environment:` vars won't work for `NEXT_PUBLIC_*` (they're build-time only)
+
+---
+
+### Expected results
+
+After fix and rebuild:
+- ✅ `create-shop` → `https://nomadnet.shop/auth/api/create-shop` (not 404)
+- ✅ `refresh-token` → `https://nomadnet.shop/auth/api/refresh-token` (not 400)
+- ✅ `login-seller` → `https://nomadnet.shop/auth/api/login-seller` (works)
+- ✅ Cookies included in requests (withCredentials: true)
+- ✅ All API requests go to backend domain, not seller-ui domain
+
+---
+
+**Status:** seller-ui now routes API requests to the backend (api-gateway) instead of its own Next.js /api routes. The fix requires rebuilding the seller-ui image with the correct `NEXT_PUBLIC_SERVER_URI` build arg.

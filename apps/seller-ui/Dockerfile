@@ -54,7 +54,8 @@ ENV NX_SKIP_NX_CACHE=true
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # ADD NEXT.JS ENVIRONMENT VARIABLES (BEFORE BUILD)
-ARG NEXT_PUBLIC_SERVER_URI=https://sellers.nomadnet.shop
+# Default to backend domain (can be overridden by docker-compose)
+ARG NEXT_PUBLIC_SERVER_URI=https://nomadnet.shop
 ENV NEXT_PUBLIC_SERVER_URI=${NEXT_PUBLIC_SERVER_URI}
 ENV NEXT_PUBLIC_CHATTING_WEBSOCKET_URI=wss://nomadnet.shop/ws-chatting
 ENV NEXT_PUBLIC_USER_UI_LINK=https://nomadnet.shop

@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { shopCategories } from "apps/seller-ui/src/utils/categories";
-import axios from "axios";
+import axiosInstance from "apps/seller-ui/src/utils/axiosInstance";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -19,8 +19,8 @@ const CreateShop = ({
 
   const shopCreateMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await axios.post(
-        `/api/create-shop`,
+      const response = await axiosInstance.post(
+        `/auth/api/create-shop`,
         data
       );
 
