@@ -1651,9 +1651,15 @@ export const seedPaymentSessionInternal = async (
         },
       });
 
-      console.log("[QPay] Invoice created and stored in session (Redis + DB)", {
+      // Log invoice creation with order metadata (no secrets)
+      const orderCount = sessionData.cart?.length || 0;
+      console.log("[QPay] Invoice created successfully", {
         sessionId,
         invoiceId: invoice.invoice_id,
+        invoiceId_len: invoice.invoice_id?.length || 0,
+        amount: sessionData.totalAmount,
+        orderCount,
+        userId: sessionData.userId,
       });
     } catch (error: any) {
       console.error("[QPay] Failed to create invoice", {
