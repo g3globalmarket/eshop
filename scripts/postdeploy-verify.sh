@@ -1,183 +1,158 @@
-#!/bin/bash
-# Post-deployment verification script
-# Checks critical containers and health endpoints to fail fast on broken deploys
-# Exit code: 0 if all checks pass, 1 if any check fails
-
+#!/usr/bin/env bash
 set -euo pipefail
 
 PROJECT="eshop"
-FILES=(
-  "-f" "docker-compose.production.yml"
-  "-f" "docker-compose.override.yml"
-  "-f" "docker-compose.nginx-override.yml"
-)
+FILES=(-f docker-compose.production.yml -f docker-compose.override.yml -f docker-compose.nginx-override.yml)
 
-# Critical services to verify (minimum required for site to function)
-CRITICAL_SERVICES=(
-  "api-gateway"
-  "auth-service"
-)
+CRITICAL_SERVICES=("api-gateway" "auth-service")
 
-# Colors for output
+GATEWAY_HEALTH_URL="http://localhost:8080/gateway-health"
+AUTH_HEALTH_URLS=("http://localhost:6001/api" "http://localhost:6001/health" "http://localhost:6001/")
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
+
+echo "Post-deployment verification starting..."
+echo "Project: ${PROJECT}"
+echo
+
+compose() {
+  docker compose -p "$PROJECT" "${FILES[@]}" "$@"
+}
+
+get_container_id() {
+  local svc="$1"
+  compose ps -q "$svc" 2>/dev/null || true
+}
+
+get_container_status() {
+  local cid="$1"
+  docker inspect -f '{{.State.Status}}' "$cid" 2>/dev/null || true
+}
+
+get_container_health() {
+  local cid="$1"
+  docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$cid" 2>/dev/null || true
+}
+
+get_container_network() {
+  local cid="$1"
+  docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' "$cid" 2>/dev/null | head -n 1 || true
+}
+
+print_service_logs() {
+  local svc="$1"
+  echo -e "${YELLOW}Last 120 lines of ${svc} logs:${NC}"
+  echo "---"
+  compose logs --tail=120 "$svc" 2>/dev/null || true
+  echo "---"
+}
+
+# Probe URL from host first; if port is internal-only, probe from docker network using service DNS.
+http_probe() {
+  local svc="$1"
+  local url="$2"
+
+  # 1) Try from host
+  if curl -fsS --max-time 5 "$url" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  # 2) Fallback: run curl container on same network, and replace localhost -> service name
+  local cid net url_net
+  cid="$(get_container_id "$svc")"
+  [ -n "$cid" ] || return 1
+
+  net="$(get_container_network "$cid")"
+  [ -n "$net" ] || return 1
+
+  url_net="${url/localhost/$svc}"
+
+  docker run --rm --network "$net" curlimages/curl:8.6.0 \
+    -fsS --max-time 5 "$url_net" >/dev/null 2>&1
+}
+
+check_container() {
+  local svc="$1"
+  local cid status health
+
+  cid="$(get_container_id "$svc")"
+  if [ -z "$cid" ]; then
+    echo -e "${RED}[FAIL] ${svc}: container not found${NC}"
+    print_service_logs "$svc"
+    return 1
+  fi
+
+  status="$(get_container_status "$cid")"
+  if [ "$status" != "running" ]; then
+    echo -e "${RED}[FAIL] ${svc}: not running (status=${status})${NC}"
+    print_service_logs "$svc"
+    return 1
+  fi
+  echo -e "${GREEN}[OK] ${svc}: running${NC}"
+
+  health="$(get_container_health "$cid")"
+  if [ -n "$health" ] && [ "$health" != "healthy" ]; then
+    echo -e "${RED}[FAIL] ${svc}: health=${health} (expected healthy)${NC}"
+    print_service_logs "$svc"
+    return 1
+  fi
+  if [ -n "$health" ]; then
+    echo -e "${GREEN}[OK] ${svc}: healthy${NC}"
+  fi
+
+  return 0
+}
+
+check_gateway_http() {
+  if http_probe "api-gateway" "$GATEWAY_HEALTH_URL"; then
+    echo -e "${GREEN}[OK] api-gateway: HTTP health endpoint responds${NC}"
+    return 0
+  fi
+  echo -e "${RED}[FAIL] api-gateway: HTTP health endpoint failed${NC}"
+  return 1
+}
+
+check_auth_http() {
+  local u
+  for u in "${AUTH_HEALTH_URLS[@]}"; do
+    if http_probe "auth-service" "$u"; then
+      echo -e "${GREEN}[OK] auth-service: HTTP endpoint responds (${u})${NC}"
+      return 0
+    fi
+  done
+  echo -e "${RED}[FAIL] auth-service: all health endpoints failed${NC}"
+  return 1
+}
 
 error_count=0
 
-echo "🔍 Post-deployment verification starting..."
-echo "   Project: ${PROJECT}"
-echo ""
-
-# Helper: get container ID for a service
-get_container_id() {
-  local svc="$1"
-  docker compose -p "$PROJECT" "${FILES[@]}" ps -q "$svc" 2>/dev/null || echo ""
-}
-
-# Helper: check if container is running
-check_container_running() {
-  local svc="$1"
-  local cid
-  cid=$(get_container_id "$svc")
-  
-  if [ -z "$cid" ]; then
-    echo -e "${RED}❌ ${svc}: Container not found${NC}"
-    return 1
-  fi
-  
-  local status
-  status=$(docker inspect -f '{{.State.Status}}' "$cid" 2>/dev/null || echo "unknown")
-  
-  if [ "$status" != "running" ]; then
-    echo -e "${RED}❌ ${svc}: Container status is '${status}' (expected 'running')${NC}"
-    return 1
-  fi
-  
-  echo -e "${GREEN}✅ ${svc}: Container is running${NC}"
-  return 0
-}
-
-# Helper: check container health status (if healthcheck exists)
-check_container_health() {
-  local svc="$1"
-  local cid
-  cid=$(get_container_id "$svc")
-  
-  if [ -z "$cid" ]; then
-    return 1
-  fi
-  
-  local health
-  health=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$cid" 2>/dev/null || echo "")
-  
-  # If no healthcheck defined, health will be empty - that's OK
-  if [ -z "$health" ]; then
-    return 0
-  fi
-  
-  if [ "$health" != "healthy" ]; then
-    echo -e "${RED}❌ ${svc}: Health status is '${health}' (expected 'healthy')${NC}"
-    return 1
-  fi
-  
-  echo -e "${GREEN}✅ ${svc}: Health status is 'healthy'${NC}"
-  return 0
-}
-
-# Helper: check HTTP health endpoint
-check_health_endpoint() {
-  local svc="$1"
-  
-  case "$svc" in
-    "api-gateway")
-      if curl -fsS --max-time 5 http://localhost:8080/gateway-health >/dev/null 2>&1; then
-        echo -e "${GREEN}✅ ${svc}: http://localhost:8080/gateway-health responds${NC}"
-        return 0
-      else
-        echo -e "${RED}❌ ${svc}: http://localhost:8080/gateway-health failed${NC}"
-        return 1
-      fi
-      ;;
-    "auth-service")
-      # Try endpoints in order: /api, /health, /
-      if curl -fsS --max-time 5 http://localhost:6001/api >/dev/null 2>&1; then
-        echo -e "${GREEN}✅ ${svc}: http://localhost:6001/api responds${NC}"
-        return 0
-      elif curl -fsS --max-time 5 http://localhost:6001/health >/dev/null 2>&1; then
-        echo -e "${GREEN}✅ ${svc}: http://localhost:6001/health responds${NC}"
-        return 0
-      elif curl -fsS --max-time 5 http://localhost:6001/ >/dev/null 2>&1; then
-        echo -e "${GREEN}✅ ${svc}: http://localhost:6001/ responds${NC}"
-        return 0
-      else
-        echo -e "${RED}❌ ${svc}: All health endpoints failed (tried /api, /health, /)${NC}"
-        return 1
-      fi
-      ;;
-    *)
-      # No endpoint check defined for this service
-      return 0
-      ;;
-  esac
-}
-
-# Helper: print service logs on failure
-print_service_logs() {
-  local svc="$1"
-  echo ""
-  echo -e "${YELLOW}📋 Last 120 lines of ${svc} logs:${NC}"
-  echo "---"
-  docker compose -p "$PROJECT" "${FILES[@]}" logs --tail=120 "$svc" 2>/dev/null || true
-  echo "---"
-}
-
-# Main verification loop
 for svc in "${CRITICAL_SERVICES[@]}"; do
   echo "Checking ${svc}..."
-  
-  # a) Ensure container exists
-  local cid
-  cid=$(get_container_id "$svc")
-  if [ -z "$cid" ]; then
-    echo -e "${RED}❌ ${svc}: Container not found${NC}"
+  if ! check_container "$svc"; then
     ((error_count++))
-    print_service_logs "$svc"
-    continue
   fi
-  
-  # b) Ensure container status is "running"
-  if ! check_container_running "$svc"; then
-    ((error_count++))
-    print_service_logs "$svc"
-    continue
-  fi
-  
-  # c) If healthcheck exists, require "healthy"
-  if ! check_container_health "$svc"; then
-    ((error_count++))
-    print_service_logs "$svc"
-    continue
-  fi
-  
-  # HTTP checks (local on EC2)
-  if ! check_health_endpoint "$svc"; then
-    ((error_count++))
-    print_service_logs "$svc"
-    continue
-  fi
-  
-  echo ""
+  echo
 done
 
-# Final verdict
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-if [ $error_count -eq 0 ]; then
-  echo -e "${GREEN}✅ All critical services are healthy!${NC}"
-  exit 0
-else
-  echo -e "${RED}❌ Post-deployment verification FAILED${NC}"
-  echo -e "${RED}   ${error_count} critical service(s) failed checks${NC}"
+echo "Checking HTTP endpoints..."
+if ! check_gateway_http; then
+  ((error_count++))
+  print_service_logs "api-gateway"
+fi
+
+if ! check_auth_http; then
+  ((error_count++))
+  print_service_logs "auth-service"
+fi
+
+echo
+if [ "$error_count" -gt 0 ]; then
+  echo -e "${RED}[FAIL] Post-deployment verification failed (${error_count} errors)${NC}"
   exit 1
 fi
+
+echo -e "${GREEN}[OK] Post-deployment verification passed${NC}"
+exit 0
