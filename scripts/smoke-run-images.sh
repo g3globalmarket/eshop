@@ -129,6 +129,14 @@ fi
 echo ""
 echo -e "${BLUE}🚀 Starting ${BACKEND_SERVICE} container...${NC}"
 
+# Generate dummy secrets for smoke test (only if not already set)
+if [ -z "$ACCESS_TOKEN_SECRET" ]; then
+  export ACCESS_TOKEN_SECRET=$(openssl rand -hex 32)
+fi
+if [ -z "$REFRESH_TOKEN_SECRET" ]; then
+  export REFRESH_TOKEN_SECRET=$(openssl rand -hex 32)
+fi
+
 # Start container with minimal env (safe placeholders)
 # Pass Redis connection vars: REDIS_DATABASE_URI (primary, used by packages/libs/redis/index.ts)
 # Also pass variants for robustness (REDIS_URL, REDIS_HOST+REDIS_PORT)
@@ -138,6 +146,8 @@ docker run -d \
   -e NODE_ENV=production \
   -e DATABASE_URL="mongodb://localhost:27017/test" \
   -e JWT_SECRET="test-secret-for-smoke-test-only" \
+  -e ACCESS_TOKEN_SECRET="$ACCESS_TOKEN_SECRET" \
+  -e REFRESH_TOKEN_SECRET="$REFRESH_TOKEN_SECRET" \
   -e KAFKA_BROKERS="localhost:9092" \
   -e REDIS_DATABASE_URI="redis://${REDIS_CONTAINER}:6379" \
   -e REDIS_URL="redis://${REDIS_CONTAINER}:6379" \

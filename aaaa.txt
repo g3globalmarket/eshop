@@ -1,141 +1,100 @@
-Fixing import paths. Checking the current state and replacing incorrect imports:
+Verifying the fix is in place and correct:
 
 
 [4 tools called]
 
 
-Fixing import paths. Checking package configuration and replacing incorrect imports:
+The fix is in place. Summary:
 
+## CI smoke test fix — complete
 
-[3 tools called]
+### Changes applied
 
+**1. GitHub Actions workflow** (`.github/workflows/docker-build.yml`)
 
-Checking how other packages are imported to understand the pattern:
+**Step updated:** `Smoke test built image` (lines 264-300)
 
+**Changes:**
+- Lines 269-275: Conditional secret generation before container start
+- Lines 282-283: Secrets injected into container
 
-[3 tools called]
+**Implementation:**
+```yaml
+      - name: Smoke test built image
+        if: steps.check-image.outputs.exists == 'false' || needs.detect-changes.outputs.has-backend-changes == 'true'
+        run: |
+          docker pull ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
 
+          # Generate dummy secrets for smoke test (only if not already set)
+          if [ -z "$ACCESS_TOKEN_SECRET" ]; then
+            export ACCESS_TOKEN_SECRET=$(openssl rand -hex 32)
+          fi
+          if [ -z "$REFRESH_TOKEN_SECRET" ]; then
+            export REFRESH_TOKEN_SECRET=$(openssl rand -hex 32)
+          fi
 
-Fixing the package entry point and replacing incorrect imports:
+          CONTAINER_NAME="smoke-test-${{ matrix.service }}"
+          docker run -d --name "$CONTAINER_NAME" \
+            -e NODE_ENV=production \
+            -e DATABASE_URL="mongodb://localhost:27017/test" \
+            -e JWT_SECRET="test-secret-for-smoke-test" \
+            -e ACCESS_TOKEN_SECRET="$ACCESS_TOKEN_SECRET" \
+            -e REFRESH_TOKEN_SECRET="$REFRESH_TOKEN_SECRET" \
+            ...
+```
 
+**2. Local smoke test script** (`scripts/smoke-run-images.sh`)
 
-[10 tools called]
+**Location:** Lines 132-150 (before auth-service container start)
 
+**Changes:**
+- Lines 132-138: Conditional secret generation
+- Lines 149-150: Secrets injected into container
 
-Adding the missing import in admin-ui:
+**Implementation:**
+```bash
+# Generate dummy secrets for smoke test (only if not already set)
+if [ -z "$ACCESS_TOKEN_SECRET" ]; then
+  export ACCESS_TOKEN_SECRET=$(openssl rand -hex 32)
+fi
+if [ -z "$REFRESH_TOKEN_SECRET" ]; then
+  export REFRESH_TOKEN_SECRET=$(openssl rand -hex 32)
+fi
 
+# Start container with minimal env (safe placeholders)
+docker run -d \
+  --name test-auth \
+  --network ${NETWORK_NAME} \
+  -e NODE_ENV=production \
+  -e DATABASE_URL="mongodb://localhost:27017/test" \
+  -e JWT_SECRET="test-secret-for-smoke-test-only" \
+  -e ACCESS_TOKEN_SECRET="$ACCESS_TOKEN_SECRET" \
+  -e REFRESH_TOKEN_SECRET="$REFRESH_TOKEN_SECRET" \
+  ...
+```
 
-[3 tools called]
+### Requirements met
 
+- Conditional generation: Only generates if vars are not already set
+- No secrets in logs: Values are not echoed or printed
+- Minimal diff: Only 2 files changed
+- Production unchanged: Only affects smoke test execution
+- Runtime-only: Secrets generated during CI run, never committed
 
-All imports are fixed. Verifying the package structure and running builds:
+### Expected result
 
-
-[3 tools called]
-
-
-Checking Next.js config and tsconfig for package resolution:
-
-
-[3 tools called]
-
-
-Adding the package dependency and webpack alias. Updating package.json and next.config.js:
-
-
-[6 tools called]
-
-
-Updating seller-ui and admin-ui:
-
-
-[5 tools called]
-
-
-Checking pnpm workspace configuration:
-
-
-[2 tools called]
-
-
-The workspace pattern `packages/utils/*` matches subdirectories, not the utils directory itself. Updating the workspace config:
-
-
-[2 tools called]
-
-
-Testing the builds:
-
-
-[1 tool called]
-
-
-Testing seller-ui and admin-ui builds:
-
-
-[3 tools called]
-
-
-All builds pass. Verifying imports are correct:
-
-
-[2 tools called]
-
-
-## Summary: CI build errors fixed
-
-### Changes made
-
-**1. Package configuration:**
-- Updated `packages/utils/package.json`: Changed `main` from `"dist/main.js"` to `"src/index.ts"`
-- Updated `pnpm-workspace.yaml`: Added `"packages/utils"` to workspace packages
-
-**2. Import path fixes (9 files):**
-- Replaced `@eshop/utils/src/currency` with `@eshop/utils` in:
-  - `apps/user-ui/src/app/(routes)/cart/page.tsx`
-  - `apps/user-ui/src/app/(routes)/order/[orderId]/page.tsx`
-  - `apps/user-ui/src/shared/components/cards/product-details.card.tsx`
-  - `apps/user-ui/src/shared/components/cards/product-card.tsx`
-  - `apps/user-ui/src/shared/components/checkout/qpayCheckoutForm.tsx`
-  - `apps/user-ui/src/shared/modules/product/product-details.tsx`
-  - `apps/seller-ui/src/shared/components/cards/product.card.tsx`
-  - `apps/seller-ui/src/app/(routes)/dashboard/payments/page.tsx`
-
-**3. Missing import added:**
-- `apps/admin-ui/src/app/dashboard/payments/page.tsx`: Added `import { formatMNT } from "@eshop/utils";`
-
-**4. Package dependencies:**
-- Added `"@eshop/utils": "workspace:*"` to:
-  - `apps/user-ui/package.json`
-  - `apps/seller-ui/package.json`
-  - `apps/admin-ui/package.json`
-
-**5. Webpack aliases:**
-- Added `"@eshop/utils": path.resolve(__dirname, "../../packages/utils/src")` to:
-  - `apps/user-ui/next.config.js`
-  - `apps/seller-ui/next.config.js`
-  - `apps/admin-ui/next.config.js`
+The `smoke-test-auth-service` container should:
+- Start successfully with generated dummy secrets
+- Not exit with `[FATAL] Missing required environment variables`
+- Pass the smoke test validation
 
 ### Verification
 
-All builds pass:
-- `pnpm nx build user-ui` — Success
-- `pnpm nx build seller-ui` — Success
-- `pnpm nx build admin-ui` — Success
+To verify locally:
+```bash
+./scripts/smoke-run-images.sh
+```
 
-No remaining references to `@eshop/utils/src/currency` found in codebase.
+The auth-service container should start and remain running without the fatal error.
 
-### Files changed (14 total)
-
-**Package config:**
-1. `packages/utils/package.json`
-2. `pnpm-workspace.yaml`
-
-**Import fixes:**
-3-11. 9 files with import path corrections (listed above)
-
-**Dependencies & config:**
-12-14. 3 package.json files (user-ui, seller-ui, admin-ui)
-15-17. 3 next.config.js files (user-ui, seller-ui, admin-ui)
-
-All changes are minimal and maintain runtime behavior. The package is now properly exported and importable via `@eshop/utils`.
+The fix is complete and ready for CI testing. The smoke test should now pass for auth-service.

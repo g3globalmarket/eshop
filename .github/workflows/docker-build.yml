@@ -266,11 +266,21 @@ jobs:
         run: |
           docker pull ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}:latest
 
+          # Generate dummy secrets for smoke test (only if not already set)
+          if [ -z "$ACCESS_TOKEN_SECRET" ]; then
+            export ACCESS_TOKEN_SECRET=$(openssl rand -hex 32)
+          fi
+          if [ -z "$REFRESH_TOKEN_SECRET" ]; then
+            export REFRESH_TOKEN_SECRET=$(openssl rand -hex 32)
+          fi
+
           CONTAINER_NAME="smoke-test-${{ matrix.service }}"
           docker run -d --name "$CONTAINER_NAME" \
             -e NODE_ENV=production \
             -e DATABASE_URL="mongodb://localhost:27017/test" \
             -e JWT_SECRET="test-secret-for-smoke-test" \
+            -e ACCESS_TOKEN_SECRET="$ACCESS_TOKEN_SECRET" \
+            -e REFRESH_TOKEN_SECRET="$REFRESH_TOKEN_SECRET" \
             -e KAFKA_BROKERS="localhost:9092" \
             -e IMAGEKIT_PUBLIC_KEY="dummy-public-key-for-smoke-test" \
             -e IMAGEKIT_SECRET_KEY="dummy-secret-key-for-smoke-test" \
