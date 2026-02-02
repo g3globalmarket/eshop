@@ -22,6 +22,7 @@ import ProductCard from "../../components/cards/product-card";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import { isProtected } from "apps/user-ui/src/utils/protected";
 import { useRouter } from "next/navigation";
+import { formatMNT } from "@eshop/utils/src/currency";
 
 const ProductDetails = ({ productDetails }: { productDetails: any }) => {
   const { user, isLoading } = useUser();
@@ -254,11 +255,11 @@ const ProductDetails = ({ productDetails }: { productDetails: any }) => {
 
           <div className="mt-3">
             <span className="text-3xl font-bold text-orange-500">
-              ${productDetails?.sale_price}
+              {formatMNT(productDetails?.sale_price || 0)}
             </span>
             <div className="flex gap-2 pb-2 text-lg border-b border-b-slate-200">
               <span className="text-gray-400 line-through">
-                ${productDetails?.regular_price}
+                {formatMNT(productDetails?.regular_price || 0)}
               </span>
               <span className="text-gray-500">-{discountPercentage}%</span>
             </div>

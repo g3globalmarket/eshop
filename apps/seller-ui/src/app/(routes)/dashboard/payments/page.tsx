@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "apps/seller-ui/src/utils/axiosInstance";
 import Link from "next/link";
 import BreadCrumbs from "apps/seller-ui/src/shared/components/breadcrumbs";
+import { formatMNT } from "@eshop/utils/src/currency";
 
 const fetchOrders = async () => {
   const res = await axiosInstance.get("/order/api/get-seller-orders");
@@ -53,7 +54,7 @@ const SellerPayments = () => {
           const sellerShare = row.original.total * 0.9;
           return (
             <span className="text-green-400 font-medium">
-              ${sellerShare.toFixed(2)}
+              {formatMNT(sellerShare)}
             </span>
           );
         },
@@ -64,7 +65,7 @@ const SellerPayments = () => {
           const adminFee = row.original.total * 0.1;
           return (
             <span className="text-yellow-400">
-              ${adminFee.toFixed(2)}
+              {formatMNT(adminFee)}
             </span>
           );
         },

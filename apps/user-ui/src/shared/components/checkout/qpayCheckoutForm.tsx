@@ -16,6 +16,7 @@ import {
   type QPayPaymentStatus,
 } from "../../../utils/qpay-api";
 import { useTranslation } from "../../../utils/i18n";
+import { formatMNT } from "@eshop/utils/src/currency";
 
 const QPayCheckoutForm = ({
   initialSessionId,
@@ -240,7 +241,7 @@ const QPayCheckoutForm = ({
               <span>
                 {item.quantity} × {item.title}
               </span>
-              <span>${(item.quantity * item.sale_price).toFixed(2)}</span>
+              <span>{formatMNT(item.quantity * item.sale_price)}</span>
             </div>
           ))}
 
@@ -248,14 +249,14 @@ const QPayCheckoutForm = ({
             <div className="flex justify-between font-semibold pt-2 border-t border-t-gray-300 mt-2">
               <span>Хөнгөлөлт</span>
               <span className="text-green-600">
-                ${coupon?.discountAmount?.toFixed(2)}
+                {formatMNT(coupon?.discountAmount || 0)}
               </span>
             </div>
           )}
 
           <div className="flex justify-between font-semibold mt-2">
             <span>{t("cart.total")}</span>
-            <span>${(total - (coupon?.discountAmount || 0)).toFixed(2)}</span>
+            <span>{formatMNT(total - (coupon?.discountAmount || 0))}</span>
           </div>
         </div>
 

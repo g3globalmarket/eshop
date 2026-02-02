@@ -91,24 +91,47 @@ export async function startQPayPayment(
     );
 
     if (!response.data.success) {
-      throw new Error(
-        response.data.error || "Failed to create payment session"
+      // Create error with status and details
+      const error: any = new Error(
+        response.data.error || response.data.details || "Failed to create payment session"
       );
+      error.status = response.status;
+      error.statusText = response.statusText;
+      error.responseData = response.data;
+      throw error;
     }
 
     return response.data;
   } catch (error: any) {
-    // Extract meaningful error message
+    // Extract all error details for proper handling
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+    const responseData = error.response?.data;
+    
     const errorMessage =
-      error.response?.data?.error ||
-      error.response?.data?.details ||
-      error.response?.data?.message ||
+      responseData?.error ||
+      responseData?.details ||
+      responseData?.message ||
       error.message ||
       "Failed to start QPay payment";
 
-    console.error("[QPay API] Start payment error:", errorMessage);
+    // Create enhanced error with all details
+    const enhancedError: any = new Error(errorMessage);
+    enhancedError.status = status;
+    enhancedError.statusText = statusText;
+    enhancedError.responseData = responseData;
+    enhancedError.endpoint = "/payments/qpay/seed-session";
+    enhancedError.method = "POST";
 
-    throw new Error(errorMessage);
+    console.error("[QPay API] Start payment error:", {
+      status,
+      statusText,
+      message: errorMessage,
+      details: responseData?.details,
+      requestId: responseData?.requestId,
+    });
+
+    throw enhancedError;
   }
 }
 

@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "../../../utils/i18n";
+import { formatMNT } from "@eshop/utils/src/currency";
 
 const CartPage = () => {
   const { t } = useTranslation();
@@ -211,21 +212,20 @@ const CartPage = () => {
                       {item?.id === discountedProductId ? (
                         <div className="flex flex-col items-center">
                           <span className="line-through text-gray-500 text-sm">
-                            ${item.sale_price.toFixed(2)}
+                            {formatMNT(item.sale_price)}
                           </span>{" "}
                           <span className="text-green-600 font-semibold">
-                            $
-                            {(
+                            {formatMNT(
                               (item.sale_price * (100 - discountPercent)) /
                               100
-                            ).toFixed(2)}
+                            )}
                           </span>
                           <span className="text-xs text-green-700 bg-green-100 px-2 py-[2px] rounded-full mt-1">
                             Хөнгөлөлт хэрэглэсэн
                           </span>
                         </div>
                       ) : (
-                        <span>${item.sale_price.toFixed(2)}</span>
+                        <span>{formatMNT(item.sale_price)}</span>
                       )}
                     </td>
                     <td>
@@ -265,14 +265,14 @@ const CartPage = () => {
                     Discount ({discountPercent}%)
                   </span>
                   <span className="text-green-600">
-                    - ${discountAmount.toFixed(2)}
+                    - {formatMNT(discountAmount)}
                   </span>
                 </div>
               )}
 
               <div className="flex justify-between items-center text-[#010f1c] text-[20px] font-[550] pb-3">
                 <span className="font-jost">{t("cart.subtotal")}</span>
-                <span>${(subtotal - discountAmount).toFixed(2)}</span>
+                <span>{formatMNT(subtotal - discountAmount)}</span>
               </div>
               <hr className="my-4 text-slate-200" />
 
@@ -345,7 +345,7 @@ const CartPage = () => {
 
                 <div className="flex justify-between items-center text-[#010f1c] text-[20px] font-[550] pb-3">
                   <span className="font-jost">{t("cart.total")}</span>
-                  <span>${(subtotal - discountAmount).toFixed(2)}</span>
+                  <span>{formatMNT(subtotal - discountAmount)}</span>
                 </div>
 
                 <button

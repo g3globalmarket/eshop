@@ -12,6 +12,7 @@ import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import { isProtected } from "apps/user-ui/src/utils/protected";
 import { useTranslation } from "../../../utils/i18n";
+import { formatMNT } from "@eshop/utils/src/currency";
 
 const ProductDetailsCard = ({
   data,
@@ -208,11 +209,11 @@ const ProductDetailsCard = ({
             {/* Price Section */}
             <div className="mt-5 flex items-center gap-4">
               <h3 className="text-2xl font-semibold text-gray-900">
-                ${data?.sale_price}
+                {formatMNT(data?.sale_price || 0)}
               </h3>
               {data?.regular_price && (
                 <h3 className="text-lg text-red-600 line-through">
-                  ${data.regular_price}
+                  {formatMNT(data.regular_price)}
                 </h3>
               )}
             </div>

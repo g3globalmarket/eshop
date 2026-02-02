@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import EbarimtReceipt from "../../../../shared/components/order/EbarimtReceipt";
+import { formatMNT } from "@eshop/utils/src/currency";
 
 const Page = () => {
   const params = useParams();
@@ -140,17 +141,17 @@ const Page = () => {
 
         <p>
           <span className="font-semibold">Total Paid:</span>{" "}
-          <span className="font-medium">${order.total.toFixed(2)}</span>
+          <span className="font-medium">{formatMNT(order.total)}</span>
         </p>
 
         {order.discountAmount > 0 && (
           <p>
             <span className="font-semibold">Discount Applied:</span>{" "}
             <span className="text-green-700">
-              -${order.discountAmount.toFixed(2)} (
+              -{formatMNT(order.discountAmount)} (
               {order.couponCode?.discountType === "percentage"
                 ? `${order.couponCode.discountValue}%`
-                : `$${order.couponCode.discountValue}`}{" "}
+                : formatMNT(order.couponCode.discountValue)}{" "}
               off)
             </span>
           </p>
@@ -238,7 +239,7 @@ const Page = () => {
                   )}
               </div>
               <p className="text-sm font-semibold text-gray-800">
-                ${item.price.toFixed(2)}
+                {formatMNT(item.price)}
               </p>
             </div>
           ))}

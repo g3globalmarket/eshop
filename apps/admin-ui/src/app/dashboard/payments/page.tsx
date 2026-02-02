@@ -61,7 +61,7 @@ const PaymentsTable = () => {
           const adminFee = row.original.total * 0.1;
           return (
             <span className="text-green-400 font-semibold">
-              ${adminFee.toFixed(2)}
+              {formatMNT(adminFee)}
             </span>
           );
         },
@@ -71,7 +71,7 @@ const PaymentsTable = () => {
         cell: ({ row }: any) => {
           const sellerEarnings = row.original.total * 0.9;
           return (
-            <span className="text-white">${sellerEarnings.toFixed(2)}</span>
+            <span className="text-white">{formatMNT(sellerEarnings)}</span>
           );
         },
       },

@@ -203,18 +203,26 @@ const Page = () => {
     } catch (err: any) {
       console.error("[Checkout] QPay payment creation error:", err);
       
+      // Extract error details from enhanced error object
+      const status = err.status || err.response?.status;
+      const statusText = err.statusText || err.response?.statusText;
+      const responseData = err.responseData || err.response?.data;
+      const endpoint = err.endpoint || err.config?.url || err.request?.url || "/payments/qpay/seed-session";
+      const method = err.method || err.config?.method || "POST";
+      
       // Log request details (no secrets)
       const errorDetails = {
-        status: err.response?.status,
-        statusText: err.response?.statusText,
-        endpoint: err.config?.url || err.request?.url || "/payments/qpay/seed-session",
-        method: err.config?.method || "POST",
+        status,
+        statusText,
+        endpoint,
+        method,
         hasSessionData: !!sessionData,
         sessionId: urlSessionId ? `${urlSessionId.substring(0, 8)}...` : null,
-        responseData: err.response?.data ? {
-          success: err.response.data.success,
-          error: err.response.data.error,
-          details: err.response.data.details,
+        responseData: responseData ? {
+          success: responseData.success,
+          error: responseData.error,
+          details: responseData.details,
+          requestId: responseData.requestId,
         } : null,
       };
       console.error("[Checkout] Error details:", errorDetails);
@@ -223,25 +231,29 @@ const Page = () => {
       let errorMessage = t("checkout.failedToCreatePayment");
       let shouldRedirectToLogin = false;
       
-      if (err.response?.status === 404) {
+      if (status === 404) {
         errorMessage = t("checkout.paymentEndpointNotFound");
-      } else if (err.response?.status === 401) {
+      } else if (status === 401) {
         // Authentication required - show clear message and offer to redirect
         errorMessage = t("checkout.needToLogin");
         shouldRedirectToLogin = true;
-      } else if (err.response?.status === 403) {
+      } else if (status === 403) {
         errorMessage = t("checkout.accessDenied");
-      } else if (err.response?.status >= 500) {
+      } else if (status === 502) {
+        // QPay service unavailable
+        errorMessage = t("checkout.serviceUnavailable") + (responseData?.details ? `: ${responseData.details}` : "");
+      } else if (status >= 500) {
         errorMessage = t("checkout.serviceUnavailable");
-      } else if (err.response?.status === 400) {
-        errorMessage = err.response?.data?.error || err.response?.data?.details || t("checkout.invalidPaymentRequest");
+      } else if (status === 400) {
+        errorMessage = responseData?.error || responseData?.details || t("checkout.invalidPaymentRequest");
       } else if (err.message) {
         errorMessage = err.message;
       }
       
       setError(errorMessage);
       
-      // Redirect to login after a short delay if authentication is required
+      // DO NOT redirect to receipt on failure - keep user on checkout page
+      // Only redirect to login if authentication is required
       if (shouldRedirectToLogin) {
         setTimeout(() => {
           router.push("/login?redirect=/checkout" + (urlSessionId ? `?sessionId=${urlSessionId}` : ""));

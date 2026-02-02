@@ -1451,15 +1451,27 @@ export const seedPaymentSessionInternal = async (
   res: Response,
   next: NextFunction
 ) => {
+  const requestId = crypto.randomBytes(8).toString("hex");
+  const startTime = Date.now();
+
   try {
     const isInternalRequest = req.headers["x-internal-request"] === "true";
     const isPublicRequest = !isInternalRequest;
+
+    console.log("[QPay Seed Session] Request received", {
+      requestId,
+      isInternalRequest,
+      isPublicRequest,
+      hasAuth: !!req.user,
+      userId: req.user?.id ? `${req.user.id.substring(0, 8)}...` : null,
+    });
 
     // For PUBLIC requests: authenticate and extract userId from JWT
     let authenticatedUserId: string | null = null;
     if (isPublicRequest) {
       // isAuthenticated middleware should have set req.user
       if (!req.user || !req.user.id) {
+        console.log("[QPay Seed Session] Authentication failed", { requestId });
         return res.status(401).json({
           success: false,
           error: "Authentication required",
@@ -1548,6 +1560,61 @@ export const seedPaymentSessionInternal = async (
     const sessionId = providedSessionId || crypto.randomUUID();
     const usedTtl = ttlSec ?? 600; // Default 10 minutes
 
+    console.log("[QPay Seed Session] Processing session", {
+      requestId,
+      sessionId: `${sessionId.substring(0, 8)}...`,
+      userId: `${sessionData.userId.substring(0, 8)}...`,
+      totalAmount: sessionData.totalAmount,
+      cartItems: sessionData.cart?.length || 0,
+    });
+
+    // Check for existing session with invoice (idempotency)
+    if (providedSessionId) {
+      const existingSession = await prisma.qPayPaymentSession.findUnique({
+        where: { sessionId: providedSessionId },
+      });
+
+      if (existingSession && existingSession.invoiceId) {
+        console.log("[QPay Seed Session] Reusing existing invoice", {
+          requestId,
+          sessionId: `${sessionId.substring(0, 8)}...`,
+          invoiceId: `${existingSession.invoiceId.substring(0, 8)}...`,
+        });
+
+        // Load invoice data from Redis if available
+        const sessionKey = `payment-session:${sessionId}`;
+        const cachedSession = await redis.get(sessionKey);
+        let invoiceData: any = null;
+
+        if (cachedSession) {
+          try {
+            const parsed = JSON.parse(cachedSession);
+            if (parsed.qpayInvoiceId) {
+              invoiceData = {
+                invoiceId: parsed.qpayInvoiceId,
+                qrText: parsed.qpayQrText,
+                qrImage: parsed.qpayQrImage,
+                shortUrl: parsed.qpayShortUrl,
+                deeplinks: parsed.qpayDeeplinks,
+              };
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+
+        // If we have invoice data, return it
+        if (invoiceData) {
+          return res.status(200).json({
+            success: true,
+            sessionId,
+            ttlSec: usedTtl,
+            invoice: invoiceData,
+          });
+        }
+      }
+    }
+
     // Generate callback token for public webhook verification
     const callbackToken = crypto.randomBytes(16).toString("hex");
 
@@ -1560,42 +1627,81 @@ export const seedPaymentSessionInternal = async (
       ...sessionData,
       qpayCallbackToken: callbackToken,
     };
-    await redis.setex(
-      sessionKey,
-      usedTtl,
-      JSON.stringify(sessionDataWithToken)
-    );
+
+    try {
+      await redis.setex(
+        sessionKey,
+        usedTtl,
+        JSON.stringify(sessionDataWithToken)
+      );
+    } catch (redisError: any) {
+      console.error("[QPay Seed Session] Redis write failed", {
+        requestId,
+        sessionId: `${sessionId.substring(0, 8)}...`,
+        error: redisError.message,
+      });
+      // Continue - DB fallback will handle it
+    }
 
     // Persist session to database (resilient to Redis expiry)
-    await prisma.qPayPaymentSession.upsert({
-      where: { sessionId },
-      create: {
-        sessionId,
-        provider: "qpay",
-        userId: sessionData.userId,
-        amount: sessionData.totalAmount,
-        currency: "MNT",
-        payload: sessionData as any,
-        status: "PENDING",
-        callbackToken,
-        expiresAt,
-      },
-      update: {
-        userId: sessionData.userId,
-        amount: sessionData.totalAmount,
-        payload: sessionData as any,
-        status: "PENDING",
-        callbackToken,
-        expiresAt,
-      },
-    });
+    try {
+      await prisma.qPayPaymentSession.upsert({
+        where: { sessionId },
+        create: {
+          sessionId,
+          provider: "qpay",
+          userId: sessionData.userId,
+          amount: sessionData.totalAmount,
+          currency: "MNT",
+          payload: sessionData as any,
+          status: "PENDING",
+          callbackToken,
+          expiresAt,
+        },
+        update: {
+          userId: sessionData.userId,
+          amount: sessionData.totalAmount,
+          payload: sessionData as any,
+          status: "PENDING",
+          callbackToken,
+          expiresAt,
+        },
+      });
+    } catch (dbError: any) {
+      console.error("[QPay Seed Session] Database write failed", {
+        requestId,
+        sessionId: `${sessionId.substring(0, 8)}...`,
+        error: dbError.message,
+      });
+      return res.status(500).json({
+        success: false,
+        error: "Failed to persist payment session",
+        details: "Database error",
+        requestId,
+      });
+    }
 
-    console.log("[QPay] Seeded payment session (Redis + DB)", {
-      sessionId,
+    console.log("[QPay Seed Session] Session persisted (Redis + DB)", {
+      requestId,
+      sessionId: `${sessionId.substring(0, 8)}...`,
       ttlSec: usedTtl,
-      userId: sessionData.userId,
+      userId: `${sessionData.userId.substring(0, 8)}...`,
       expiresAt,
     });
+
+    // Validate QPay environment variables
+    if (!process.env.QPAY_INVOICE_CODE) {
+      console.error("[QPay Seed Session] Missing QPAY_INVOICE_CODE", {
+        requestId,
+        sessionId: `${sessionId.substring(0, 8)}...`,
+      });
+      return res.status(500).json({
+        success: false,
+        error: "QPay service configuration error",
+        details: "Payment service is not properly configured",
+        requestId,
+      });
+    }
 
     // Create QPay invoice and get QR data
     let invoiceData: {
@@ -1607,6 +1713,12 @@ export const seedPaymentSessionInternal = async (
     } | null = null;
 
     try {
+      console.log("[QPay Seed Session] Creating QPay invoice", {
+        requestId,
+        sessionId: `${sessionId.substring(0, 8)}...`,
+        amount: sessionData.totalAmount,
+      });
+
       const qpayClient = getQPayClient();
       const invoice = await qpayClient.createInvoiceSimple({
         sessionId,
@@ -1653,37 +1765,60 @@ export const seedPaymentSessionInternal = async (
 
       // Log invoice creation with order metadata (no secrets)
       const orderCount = sessionData.cart?.length || 0;
-      console.log("[QPay] Invoice created successfully", {
-        sessionId,
-        invoiceId: invoice.invoice_id,
+      const duration = Date.now() - startTime;
+      console.log("[QPay Seed Session] Invoice created successfully", {
+        requestId,
+        sessionId: `${sessionId.substring(0, 8)}...`,
+        invoiceId: `${invoice.invoice_id.substring(0, 8)}...`,
         invoiceId_len: invoice.invoice_id?.length || 0,
         amount: sessionData.totalAmount,
         orderCount,
-        userId: sessionData.userId,
+        userId: `${sessionData.userId.substring(0, 8)}...`,
+        durationMs: duration,
       });
     } catch (error: any) {
-      console.error("[QPay] Failed to create invoice", {
-        sessionId,
+      const duration = Date.now() - startTime;
+      console.error("[QPay Seed Session] Failed to create invoice", {
+        requestId,
+        sessionId: `${sessionId.substring(0, 8)}...`,
         error: error.message,
-        stack: error.stack,
+        errorType: error.constructor?.name,
+        durationMs: duration,
+        // Don't log full stack in production, but include error type
       });
 
       // Store error in session for debugging (preserve callbackToken)
-      const sessionWithError = {
-        ...sessionData,
-        qpayCallbackToken: callbackToken, // Preserve token
-        qpayInvoiceCreateError: error.message,
-      };
-      await redis.setex(sessionKey, usedTtl, JSON.stringify(sessionWithError));
+      try {
+        const sessionWithError = {
+          ...sessionData,
+          qpayCallbackToken: callbackToken, // Preserve token
+          qpayInvoiceCreateError: error.message,
+        };
+        await redis.setex(sessionKey, usedTtl, JSON.stringify(sessionWithError));
+      } catch (redisError) {
+        // Ignore Redis errors during error handling
+      }
 
-      return res.status(500).json({
+      // Return 502 for QPay API failures (bad gateway)
+      // Return 500 for configuration/other errors
+      const isQPayApiError = error.message?.includes("QPay") || 
+                            error.message?.includes("invoice creation failed");
+      const statusCode = isQPayApiError ? 502 : 500;
+      const errorMessage = isQPayApiError 
+        ? "QPay service unavailable" 
+        : "Failed to create payment invoice";
+
+      return res.status(statusCode).json({
         success: false,
-        error: "Failed to create QPay invoice",
-        details: error.message,
+        error: errorMessage,
+        details: error.message?.substring(0, 200) || "Unknown error",
         sessionId,
-        ttlSec: usedTtl,
+        requestId,
       });
     }
+
+    // Add request ID to response header for correlation
+    res.setHeader("X-Request-ID", requestId);
 
     return res.status(200).json({
       success: true,
@@ -1692,11 +1827,26 @@ export const seedPaymentSessionInternal = async (
       invoice: invoiceData,
     });
   } catch (error: any) {
-    console.error("[QPay] Error seeding payment session", {
+    const duration = Date.now() - startTime;
+    console.error("[QPay Seed Session] Unexpected error", {
+      requestId,
       error: error.message,
+      errorType: error.constructor?.name,
+      durationMs: duration,
+      // Log stack trace for unexpected errors
       stack: error.stack,
     });
-    return next(error);
+
+    // Return proper JSON error instead of calling next()
+    // This prevents unhandled errors from causing 500s
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+      details: process.env.NODE_ENV === "production" 
+        ? "An unexpected error occurred" 
+        : error.message,
+      requestId,
+    });
   }
 };
 
