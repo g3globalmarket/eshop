@@ -17,6 +17,7 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@packages": path.resolve(__dirname, "../../packages"),
+      "@eshop/utils": path.resolve(__dirname, "../../packages/utils/src"),
     };
     return config;
   },

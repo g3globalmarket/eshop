@@ -7,7 +7,7 @@ import { useStore } from "apps/user-ui/src/store";
 import useUser from "apps/user-ui/src/hooks/useUser";
 import useLocationTracking from "apps/user-ui/src/hooks/useLocationTracking";
 import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
-import { formatMNT } from "@eshop/utils/src/currency";
+import { formatMNT } from "@eshop/utils";
 
 const ProductCard = ({
   product,

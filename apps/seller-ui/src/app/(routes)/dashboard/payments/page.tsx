@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "apps/seller-ui/src/utils/axiosInstance";
 import Link from "next/link";
 import BreadCrumbs from "apps/seller-ui/src/shared/components/breadcrumbs";
-import { formatMNT } from "@eshop/utils/src/currency";
+import { formatMNT } from "@eshop/utils";
 
 const fetchOrders = async () => {
   const res = await axiosInstance.get("/order/api/get-seller-orders");

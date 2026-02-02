@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import BreadCrumbs from "apps/admin-ui/src/shared/components/breadcrumbs";
 import axiosInstance from "apps/admin-ui/src/utils/axiosInstance";
+import { formatMNT } from "@eshop/utils";
 
 const fetchOrders = async () => {
   const res = await axiosInstance.get("/order/api/get-admin-orders");

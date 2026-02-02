@@ -12,7 +12,7 @@ import useDeviceTracking from "apps/user-ui/src/hooks/useDeviceTracking";
 import axiosInstance from "apps/user-ui/src/utils/axiosInstance";
 import { isProtected } from "apps/user-ui/src/utils/protected";
 import { useTranslation } from "../../../utils/i18n";
-import { formatMNT } from "@eshop/utils/src/currency";
+import { formatMNT } from "@eshop/utils";
 
 const ProductDetailsCard = ({
   data,

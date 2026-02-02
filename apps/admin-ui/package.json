@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@eshop/components": "workspace:*",
+    "@eshop/utils": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
     "apexcharts": "^4.0.0",

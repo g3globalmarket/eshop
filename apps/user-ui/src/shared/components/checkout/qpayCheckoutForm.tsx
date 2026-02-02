@@ -16,7 +16,7 @@ import {
   type QPayPaymentStatus,
 } from "../../../utils/qpay-api";
 import { useTranslation } from "../../../utils/i18n";
-import { formatMNT } from "@eshop/utils/src/currency";
+import { formatMNT } from "@eshop/utils";
 
 const QPayCheckoutForm = ({
   initialSessionId,

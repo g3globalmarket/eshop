@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "../../../utils/i18n";
-import { formatMNT } from "@eshop/utils/src/currency";
+import { formatMNT } from "@eshop/utils";
 
 const CartPage = () => {
   const { t } = useTranslation();

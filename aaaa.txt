@@ -1,128 +1,141 @@
-Verifying all fixes are in place and summarizing what's been completed:
+Fixing import paths. Checking the current state and replacing incorrect imports:
 
 
 [4 tools called]
 
 
-All fixes are in place. Verifying critical parts and preparing a summary:
+Fixing import paths. Checking package configuration and replacing incorrect imports:
 
 
 [3 tools called]
 
 
-All fixes are complete and verified. Summary:
+Checking how other packages are imported to understand the pattern:
 
-## All tasks completed
 
-### Task 1: Backend 500 fix — COMPLETE
+[3 tools called]
 
-**File:** `apps/order-service/src/controllers/order.controller.ts`
 
-**Implemented:**
-- Request ID tracking: generates `requestId` and adds `X-Request-ID` header
-- Idempotency: reuses existing invoice if `sessionId` already has one
-- Validation: returns 400 for missing/invalid inputs
-- Error handling: returns JSON errors instead of calling `next(error)`
-- QPay API errors: returns 502 with "QPay service unavailable"
-- Config errors: returns 500 with "Payment configuration error"
-- Logging: includes requestId, duration, error types (no secrets)
+Fixing the package entry point and replacing incorrect imports:
 
-**Key code sections:**
-- Lines 1454-1455: Request ID generation
-- Lines 1571-1616: Idempotency check
-- Lines 1664-1686: QPay API error handling (502)
-- Lines 1694-1701: Outer catch with proper JSON response
-- Line 1821: `X-Request-ID` header
 
-### Task 2: Frontend error handling — COMPLETE
+[10 tools called]
 
-**Files:**
-- `apps/user-ui/src/utils/qpay-api.ts`
-- `apps/user-ui/src/app/(routes)/checkout/page.tsx`
 
-**Implemented:**
-- Enhanced error object with `status`, `statusText`, `responseData`, `endpoint`, `method`
-- Proper error extraction from Axios responses
-- Mongolian-only error messages
-- No redirect to receipt on failure (user stays on checkout)
-- Retry capability
+Adding the missing import in admin-ui:
 
-**Key code sections:**
-- `qpay-api.ts` lines 105-125: Enhanced error extraction
-- `checkout/page.tsx` lines 203-253: Improved error handling with status codes
 
-### Task 3: Mongolian currency (₮/MNT) — COMPLETE
+[3 tools called]
 
-**Files created:**
-- `packages/utils/src/currency.ts` - formatMNT utility
-- `packages/utils/src/index.ts` - Export
 
-**Files updated (all currency replaced):**
-1. `apps/user-ui/src/shared/modules/product/product-details.tsx`
-2. `apps/user-ui/src/app/(routes)/cart/page.tsx`
-3. `apps/user-ui/src/shared/components/checkout/qpayCheckoutForm.tsx`
-4. `apps/user-ui/src/shared/components/cards/product-details.card.tsx`
-5. `apps/user-ui/src/shared/components/cards/product-card.tsx`
-6. `apps/user-ui/src/app/(routes)/order/[orderId]/page.tsx`
-7. `apps/seller-ui/src/shared/components/cards/product.card.tsx`
-8. `apps/seller-ui/src/app/(routes)/dashboard/payments/page.tsx`
-9. `apps/admin-ui/src/app/dashboard/payments/page.tsx`
+All imports are fixed. Verifying the package structure and running builds:
 
-**Verification:** No `$`, `USD`, `KRW`, or `₩` found in user-ui source files.
 
----
+[3 tools called]
 
-## Verification steps
 
-### 1. Test seed-session endpoint
+Checking Next.js config and tsconfig for package resolution:
 
-```bash
-# With authentication cookie
-curl -X POST https://nomadnet.shop/payments/qpay/seed-session \
-  -H "Content-Type: application/json" \
-  -H "Cookie: your-auth-cookie" \
-  -d '{
-    "cart": [{"productId": "...", "quantity": 1, "sale_price": 10000, "shopId": "..."}],
-    "sellers": ["..."],
-    "totalAmount": 10000
-  }' \
-  -v
 
-# Expected: 200 OK with invoice object
-# Or: 400/404/502 with JSON error (not 500)
-# Response header: X-Request-ID: <hex>
-```
+[3 tools called]
 
-**Expected results:**
-- Success: `200 OK` with `{"success": true, "sessionId": "...", "invoice": {...}}`
-- Error: `400/404/502` with JSON `{"success": false, "error": "...", "requestId": "..."}`
-- Never: Generic `500` without details
 
-### 2. Verify QR display in UI
+Adding the package dependency and webpack alias. Updating package.json and next.config.js:
 
-1. Log in to user-ui
-2. Add items to cart
-3. Go to checkout
-4. Click "Pay with QPay"
-5. Expected: QR code appears with payment details
-6. If error: Mongolian error message shown, no redirect to receipt
 
-### 3. Verify currency formatting
+[6 tools called]
 
-Check these pages show `₮ 10,000` format (or Intl equivalent):
-- Product detail pages
-- Cart page
-- Checkout page
-- Order history
-- Seller dashboard payments
-- Admin dashboard payments
 
----
+Updating seller-ui and admin-ui:
 
-## Summary
 
-- Backend: Robust error handling, idempotency, proper status codes
-- Frontend: Enhanced error capture, Mongolian messages, no premature redirects
-- Currency: All UI uses `formatMNT()` - Mongolian Tugrik everywhere
+[5 tools called]
 
-All changes are minimal, safe, and maintain existing runtime logic. Ready for testing.
+
+Checking pnpm workspace configuration:
+
+
+[2 tools called]
+
+
+The workspace pattern `packages/utils/*` matches subdirectories, not the utils directory itself. Updating the workspace config:
+
+
+[2 tools called]
+
+
+Testing the builds:
+
+
+[1 tool called]
+
+
+Testing seller-ui and admin-ui builds:
+
+
+[3 tools called]
+
+
+All builds pass. Verifying imports are correct:
+
+
+[2 tools called]
+
+
+## Summary: CI build errors fixed
+
+### Changes made
+
+**1. Package configuration:**
+- Updated `packages/utils/package.json`: Changed `main` from `"dist/main.js"` to `"src/index.ts"`
+- Updated `pnpm-workspace.yaml`: Added `"packages/utils"` to workspace packages
+
+**2. Import path fixes (9 files):**
+- Replaced `@eshop/utils/src/currency` with `@eshop/utils` in:
+  - `apps/user-ui/src/app/(routes)/cart/page.tsx`
+  - `apps/user-ui/src/app/(routes)/order/[orderId]/page.tsx`
+  - `apps/user-ui/src/shared/components/cards/product-details.card.tsx`
+  - `apps/user-ui/src/shared/components/cards/product-card.tsx`
+  - `apps/user-ui/src/shared/components/checkout/qpayCheckoutForm.tsx`
+  - `apps/user-ui/src/shared/modules/product/product-details.tsx`
+  - `apps/seller-ui/src/shared/components/cards/product.card.tsx`
+  - `apps/seller-ui/src/app/(routes)/dashboard/payments/page.tsx`
+
+**3. Missing import added:**
+- `apps/admin-ui/src/app/dashboard/payments/page.tsx`: Added `import { formatMNT } from "@eshop/utils";`
+
+**4. Package dependencies:**
+- Added `"@eshop/utils": "workspace:*"` to:
+  - `apps/user-ui/package.json`
+  - `apps/seller-ui/package.json`
+  - `apps/admin-ui/package.json`
+
+**5. Webpack aliases:**
+- Added `"@eshop/utils": path.resolve(__dirname, "../../packages/utils/src")` to:
+  - `apps/user-ui/next.config.js`
+  - `apps/seller-ui/next.config.js`
+  - `apps/admin-ui/next.config.js`
+
+### Verification
+
+All builds pass:
+- `pnpm nx build user-ui` — Success
+- `pnpm nx build seller-ui` — Success
+- `pnpm nx build admin-ui` — Success
+
+No remaining references to `@eshop/utils/src/currency` found in codebase.
+
+### Files changed (14 total)
+
+**Package config:**
+1. `packages/utils/package.json`
+2. `pnpm-workspace.yaml`
+
+**Import fixes:**
+3-11. 9 files with import path corrections (listed above)
+
+**Dependencies & config:**
+12-14. 3 package.json files (user-ui, seller-ui, admin-ui)
+15-17. 3 next.config.js files (user-ui, seller-ui, admin-ui)
+
+All changes are minimal and maintain runtime behavior. The package is now properly exported and importable via `@eshop/utils`.

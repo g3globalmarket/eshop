@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import EbarimtReceipt from "../../../../shared/components/order/EbarimtReceipt";
-import { formatMNT } from "@eshop/utils/src/currency";
+import { formatMNT } from "@eshop/utils";
 
 const Page = () => {
   const params = useParams();

@@ -3,7 +3,7 @@ import { Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
-import { formatMNT } from "@eshop/utils/src/currency";
+import { formatMNT } from "@eshop/utils";
 
 const ProductCard = ({ product }: { product: any }) => {
   // Calculate Discount
