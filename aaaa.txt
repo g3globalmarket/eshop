@@ -1,185 +1,63 @@
-
-Scanning the repo for user-visible English strings and translating them to Mongolian. Starting with a systematic search:
-
-
-[4 tools called]
-
-
-Creating the admin-ui i18n system, then translating the most critical components. Starting with admin-ui:
+Verifying the current state and confirming the fix is complete:
 
 
 [3 tools called]
 
 
-Translating the cart page and header, then continuing with other critical components:
+The type declaration file exists and is correct. Verifying the tsconfig includes `.d.ts` files and running the build to confirm:
 
 
-[12 tools called]
+[2 tools called]
 
 
-Continuing to translate the remaining English strings in the cart page:
+Checking the full build output for errors:
 
 
-[6 tools called]
+[1 tool called]
 
 
-Checking header-bottom and footer, then translating other critical components:
+Build succeeded. Verifying the type declaration file matches the requirements and checking if tsconfig needs an explicit include:
 
 
-[3 tools called]
+[2 tools called]
 
 
-Translating header-bottom and other critical components:
+## Fix complete — build passes
 
+### Summary
 
-[5 tools called]
+**1. Type declaration file created:**
+- `apps/user-ui/src/types/axios.d.ts` — module augmentation for axios types
 
+**2. TypeScript configuration:**
+- No changes needed — `apps/user-ui/tsconfig.json` already includes `**/*.ts`, which matches `.d.ts` files
+- The type declaration file is automatically included
 
-Translating the signup page and other critical components:
+**3. Build validation:**
+- Ran `pnpm nx build user-ui` — build completed successfully
+- No TypeScript errors about `requireAuth` property
+- All 27 pages compiled successfully
+- Exit code: 0
 
+### Files changed
 
-[4 tools called]
+**New file:** `apps/user-ui/src/types/axios.d.ts`
+```typescript
+import "axios";
 
+declare module "axios" {
+  export interface AxiosRequestConfig<D = any> {
+    requireAuth?: boolean;
+    isProtected?: boolean;
+  }
 
-Translating the not-found page, EbarimtForm, and signup validation messages:
+  export interface InternalAxiosRequestConfig<D = any> {
+    requireAuth?: boolean;
+    isProtected?: boolean;
+  }
+}
+```
 
+**No tsconfig changes needed** — the existing `**/*.ts` pattern already covers `.d.ts` files.
 
-[8 tools called]
-
-
-Translating EbarimtForm and remaining signup strings:
-
-
-[9 tools called]
-
-
-Updating signup placeholders and translating a few more critical components, then summarizing:
-
-
-[5 tools called]
-
-
-Creating a summary of completed work and remaining tasks:
-
-
-[3 tools called]
-
-
-Translating product-details card and a few more critical components, then summarizing:
-
-
-[5 tools called]
-
-
-Translating the remaining English strings in the product-details card:
-
-
-[5 tools called]
-
-
-## Summary
-
-Translated critical user-facing components to Mongolian. Created i18n systems and translated the most visible pages.
-
-### Files Created
-
-1. `apps/user-ui/src/utils/i18n.ts` — Mongolian-only i18n utility with 100+ translation keys
-2. `apps/admin-ui/src/utils/i18n.ts` — Mongolian-only i18n utility for admin dashboard
-
-### Files Modified (User-Visible Text Only)
-
-**user-ui:**
-1. `apps/user-ui/src/app/(routes)/checkout/page.tsx` — Translated error messages, buttons, labels
-2. `apps/user-ui/src/shared/components/checkout/qpayCheckoutForm.tsx` — Translated status messages, buttons, labels
-3. `apps/user-ui/src/app/(routes)/login/page.tsx` — Translated form labels, validation messages, buttons
-4. `apps/user-ui/src/app/(routes)/cart/page.tsx` — Translated table headers, buttons, labels, error messages
-5. `apps/user-ui/src/shared/widgets/header/header-bottom.tsx` — Translated "All Departments", "No categories found", "Hello", "Sign In"
-6. `apps/user-ui/src/app/not-found.tsx` — Translated 404 page
-7. `apps/user-ui/src/shared/components/checkout/EbarimtForm.tsx` — Translated form labels, validation messages, buttons
-8. `apps/user-ui/src/app/(routes)/signup/page.tsx` — Translated validation messages, placeholders
-9. `apps/user-ui/src/shared/components/cards/product-details.card.tsx` — Translated "Chat with Seller", "Brand", "Color", "Size", "Add to Cart", "In Stock", "Out of Stock", "Estimated Delivery"
-
-**admin-ui:**
-- i18n utility created (ready for use)
-
-### Consistency Map (Top 20 Most Common Phrases)
-
-| English Phrase | Mongolian Translation |
-|----------------|----------------------|
-| Login / Sign in | Нэвтрэх |
-| Register / Sign up | Бүртгүүлэх |
-| Logout | Гарах |
-| Checkout | Төлбөр төлөх |
-| Order | Захиалга |
-| Cart | Сагс |
-| Add to Cart | Сагсанд нэмэх |
-| Payment | Төлбөр |
-| Pay | Төлөх |
-| Continue | Үргэлжлүүлэх |
-| Back | Буцах |
-| Cancel | Цуцлах |
-| Save | Хадгалах |
-| Delete | Устгах |
-| Loading | Ачаалж байна… |
-| Error | Алдаа |
-| Success | Амжилттай |
-| Required | Заавал |
-| Waiting for payment... | Төлбөр хүлээж байна... |
-| Payment received | Төлбөр хүлээн авлаа |
-
-### Remaining Work
-
-This is a large task. To complete:
-
-1. user-ui remaining pages:
-   - Product pages (`/product/[slug]`, `/products`)
-   - Order history, track orders
-   - Profile, account settings
-   - Wishlist, inbox
-   - Footer links
-   - Other route pages
-
-2. admin-ui dashboard:
-   - All dashboard pages (users, sellers, products, orders, payments, etc.)
-   - Sidebar navigation
-   - Table headers, buttons, labels
-
-3. seller-ui:
-   - Already has i18n, but verify no hardcoded English remains
-
-4. Error messages and toasts:
-   - Update `qpay-api.ts` error messages
-   - Toast notifications across all apps
-   - Form validation messages
-
-### Pattern for Remaining Files
-
-For each file with English strings:
-
-1. Import translation hook:
-   ```typescript
-   import { useTranslation } from "../../../utils/i18n";
-   const { t } = useTranslation();
-   ```
-
-2. Replace hardcoded strings:
-   ```typescript
-   // Before:
-   <button>Login</button>
-   
-   // After:
-   <button>{t("auth.login")}</button>
-   ```
-
-3. Add missing translations to `i18n.ts` as needed
-
-### Verification
-
-- No linter errors
-- i18n keys preserved (only values translated)
-- No logic/behavior changes
-- Interpolations preserved ({x}, ${x}, etc.)
-
-The foundation is in place. The i18n systems are ready, and the pattern is established. The most critical user-facing components (checkout, cart, login, QPay) are translated. Remaining work follows the same pattern.
-
-Should I continue with more files, or do you want to review this first?
+The TypeScript error is resolved. The module augmentation extends both `AxiosRequestConfig` and `InternalAxiosRequestConfig` with `requireAuth` and `isProtected`, so TypeScript recognizes these properties in your axios interceptors. Runtime logic remains unchanged.
